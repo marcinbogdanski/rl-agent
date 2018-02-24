@@ -51,9 +51,6 @@ class TestAgent(unittest.TestCase):
     def test_10_run_keras_1(self):
         print('test run 1')
 
-        timing_arr = []
-        timing_dict = {}
-
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
@@ -90,8 +87,6 @@ class TestAgent(unittest.TestCase):
             
             plotter=None,
             logger=self.logger,
-            timing_arr=timing_arr,
-            timing_dict=timing_dict,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
@@ -107,9 +102,6 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(done, 1)
 
     def test_20_run_tile_1(self):
-
-        timing_arr = []
-        timing_dict = {}
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -147,8 +139,6 @@ class TestAgent(unittest.TestCase):
             
             plotter=None,
             logger=self.logger,
-            timing_arr=timing_arr,
-            timing_dict=timing_dict,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
@@ -165,9 +155,6 @@ class TestAgent(unittest.TestCase):
 
 
     def test_30_run_aggregate_1(self):
-
-        timing_arr = []
-        timing_dict = {}
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -205,8 +192,6 @@ class TestAgent(unittest.TestCase):
             
             plotter=None,
             logger=self.logger,
-            timing_arr=timing_arr,
-            timing_dict=timing_dict,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()

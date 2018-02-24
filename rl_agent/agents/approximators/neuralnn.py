@@ -68,12 +68,11 @@ class NeuralApproximator:
         est = self._nn.forward(states)
         return est  # return 2d array
 
-    def update(self, batch, timing_dict):
+    def update(self, batch):
         assert isinstance(batch, list)
         assert len(batch) > 0
         assert len(batch[0]) == 5
 
-        time_start = time.time()
         inputs = []
         targets = []
         for tup in batch:
@@ -102,11 +101,9 @@ class NeuralApproximator:
             inp = np.array([[pp, vv]])
             inp_n = np.array([[pp_n, vv_n]])
 
-            time_pred = time.time()
             est = self._nn.forward(inp)
             est_n = self._nn.forward(inp_n)
-            timing_dict['      update_loop_pred'] += time.time() - time_pred
-
+            
             q_n = np.max(est_n)
 
             if done:
@@ -120,31 +117,23 @@ class NeuralApproximator:
 
             inputs.append([pp, vv])
             targets.append(est[0])
-        timing_dict['    update_loop'] += time.time() - time_start
-
-        time_start = time.time()
+        
         inputs = np.array(inputs)
         targets = np.array(targets)
-        timing_dict['    update_convert_numpy'] += time.time() - time_start
-
-        time_start = time.time()
+        
         self._nn.train_batch(inputs, targets, self._step_size)
-        timing_dict['    update_train_on_batch'] += time.time() - time_start
-
-    def update2(self, batch, timing_dict):
+        
+    def update2(self, batch):
         assert isinstance(batch, list)
         assert len(batch) > 0
         assert len(batch[0]) == 5
 
-        time_start = time.time()
         inputs = np.zeros([len(batch), 2], dtype=np.float32)
         actions = np.zeros([len(batch)], dtype=np.int8)
         rewards_n = np.zeros([len(batch), 1], dtype=np.float32)
         inputs_n = np.zeros([len(batch), 2], dtype=np.float32)
         not_dones = np.zeros([len(batch), 1], dtype=np.bool)
-        timing_dict['    update2_create_arr'] += time.time() - time_start
 
-        time_start = time.time()
         for i, tup in enumerate(batch):
             St = tup[0]
             At = tup[1]
@@ -159,29 +148,20 @@ class NeuralApproximator:
             not_dones[i] = not done
 
             assert At in [0, 1, 2]
-        timing_dict['    update2_loop'] += time.time() - time_start
 
-        time_start = time.time()
         inputs[:,0] += self._pos_offset
         inputs[:,0] *= self._pos_scale
         inputs[:,1] *= self._vel_scale
         inputs_n[:,0] += self._pos_offset
         inputs_n[:,0] *= self._pos_scale
         inputs_n[:,1] *= self._vel_scale
-        timing_dict['    update2_scale'] += time.time() - time_start
 
-        time_start = time.time()
         targets = self._nn.forward(inputs)
         est_n = self._nn.forward(inputs_n)
-        timing_dict['    update2_predict'] += time.time() - time_start
 
-        time_start = time.time()
         q_n = np.max(est_n, axis=1, keepdims=True)
         tt = rewards_n + (not_dones * self._discount * q_n)
         targets[np.arange(len(targets)), actions] = tt.flatten()
-        timing_dict['    update2_post'] += time.time() - time_start
 
-        time_start = time.time()
         self._nn.train_batch(inputs, targets, self._step_size)
-        timing_dict['    update2_train_on_batch'] += time.time() - time_start
-
+        

@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import collections
-import time
 import pdb
 import random
 import math
@@ -13,9 +12,6 @@ from .approximators import TilesApproximator
 from .approximators import NeuralApproximator
 from .approximators import KerasApproximator
 
-# from keras import Sequential
-# from keras.layers import Dense
-# from keras.optimizers import RMSprop, sgd
 import tensorflow as tf
 
 
@@ -388,7 +384,7 @@ class Agent:
 
 
 
-    def eval_td_t(self, t, timing_dict):
+    def eval_td_t(self, t):
         """TD update state-value for single state in trajectory
 
         This assumesss time step t+1 is availalbe in the trajectory
@@ -405,8 +401,6 @@ class Agent:
 
         """
 
-        time_start = time.time()
-
         # Shortcuts for more compact notation:
 
         St = self._trajectory[t].observation      # evaluated state tuple (x, y)
@@ -418,24 +412,18 @@ class Agent:
 
         if self._curr_total_step < self.nb_rand_steps:
             # no lerninng during initial random phase
-            timing_dict['  eval_td_start'] += time.time() - time_start
             return
 
-        timing_dict['  eval_td_start'] += time.time() - time_start
 
 
         if isinstance(self.Q, NeuralApproximator) or \
             isinstance(self.Q, KerasApproximator):
 
-            time_start = time.time()
             states, actions, rewards_1, states_1, dones, indices = \
                 self._memory.get_batch(self._batch_size)
-            timing_dict['  eval_td_get_batch'] += time.time() - time_start
 
-            time_start = time.time()
             debug = self._curr_total_step == 110500
-            errors = self.Q.update2(states, actions, rewards_1, states_1, dones, timing_dict)
-            timing_dict['  eval_td_update'] += time.time() - time_start
+            errors = self.Q.update2(states, actions, rewards_1, states_1, dones)
 
             self._memory.update_errors(indices, errors)
 
@@ -451,6 +439,6 @@ class Agent:
             self.Q.update(St, At, Tt)
             
 
-    def eval_td_online(self, timing_dict):
-        self.eval_td_t(len(self._trajectory) - 2, timing_dict)  # Eval next-to last state
+    def eval_td_online(self):
+        self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
 
