@@ -94,6 +94,13 @@ class Logger():
         self.hostname = hostname
         self.git_hash = git_hash
 
+        self.agent = Log('Agent')
+        self.q_val = Log('Q_Val')
+        self.env = Log('Environment')
+        self.hist = Log('History', 'History of all states visited')
+        self.memory = Log('Memory', 'Agent full memory dump on given timestep')
+        self.approx = Log('Approx', 'Approximator')
+
     def __str__(self):
         res = 'Date time: ' + self.datetime + '\n' + \
               'Hostname:' + self.hostname + '\n' + \

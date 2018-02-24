@@ -68,11 +68,7 @@ class TestAgent(unittest.TestCase):
             step_size=0.00025,
             batch_size=64,
 
-            log_agent=self.logger.agent,
-            log_q_val=self.logger.q_val,
-            log_hist=self.logger.hist,
-            log_memory=self.logger.memory,
-            log_approx=self.logger.approx,
+            logger=None,
             seed=self.seed)
 
         trained_agent = rl.test_run(
@@ -86,7 +82,6 @@ class TestAgent(unittest.TestCase):
             agent_nb_actions=3,
             
             plotter=None,
-            logger=self.logger,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
@@ -120,11 +115,7 @@ class TestAgent(unittest.TestCase):
             step_size=0.3,
             batch_size=64,
 
-            log_agent=self.logger.agent,
-            log_q_val=self.logger.q_val,
-            log_hist=self.logger.hist,
-            log_memory=self.logger.memory,
-            log_approx=self.logger.approx,
+            logger=None,
             seed=self.seed)
 
         trained_agent = rl.test_run(
@@ -138,7 +129,6 @@ class TestAgent(unittest.TestCase):
             agent_nb_actions=3,
             
             plotter=None,
-            logger=self.logger,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
@@ -147,7 +137,7 @@ class TestAgent(unittest.TestCase):
         print('  st, act, rew, done:', st, act, rew, done)
 
         self.assertEqual(fp, -3685.9990078639967)
-        self.assertEqual(ws, -1293.1786010586354)
+        self.assertEqual(ws, -1293.1786010586356)
         self.assertEqual(st, -2471.820406805361)
         self.assertEqual(act, 5073)
         self.assertEqual(rew, -4997)
@@ -173,11 +163,7 @@ class TestAgent(unittest.TestCase):
             step_size=0.3,
             batch_size=64,
 
-            log_agent=self.logger.agent,
-            log_q_val=self.logger.q_val,
-            log_hist=self.logger.hist,
-            log_memory=self.logger.memory,
-            log_approx=self.logger.approx,
+            logger=None,
             seed=self.seed)
 
         trained_agent = rl.test_run(
@@ -191,7 +177,6 @@ class TestAgent(unittest.TestCase):
             agent_nb_actions=3,
             
             plotter=None,
-            logger=self.logger,
             seed=self.seed)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()

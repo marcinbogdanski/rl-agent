@@ -14,13 +14,10 @@ def test_run(env, agent,
     agent_nb_actions,
 
     plotter=None,
-    logger=None, 
     seed=None):
 
-
-
     #
-    #   Initialise loggers
+    #   Loop episodes
     #
     episode = -1
     total_step = -1
@@ -74,19 +71,9 @@ def test_run(env, agent,
                     'step_size', agent._step_size)
 
 
-                # PRINT (RAND)
-                # i = total_step
-                # t_steps = logger.agent.total_steps[0:i:1]
-                # ser_e_rand = logger.agent.data['e_rand'][0:i:1]
-                # ser_rand_act = logger.agent.data['rand_act'][0:i:1]
-                # ser_mem_size = logger.agent.data['mem_size'][0:i:1]
-                # arr = logger.agent.data['rand_act'][max(0, i-1000):i]
-                # nz = np.count_nonzero(arr)
-                # print('RAND: ', nz, ' / ', len(arr))
-
             if plotter is not None and total_step >= agent.nb_rand_steps:
-                plotter.process(logger, total_step)
-                res = plotter.conditional_plot(logger, total_step)
+                plotter.process(agent.logger, total_step)
+                res = plotter.conditional_plot(agent.logger, total_step)
                 if res:
                     plt.pause(0.001)
                     pass
@@ -99,12 +86,10 @@ def test_run(env, agent,
             if nb_total_steps is not None and total_step >= nb_total_steps:
                 break
 
-            #if total_step >= 111280+8:
-            # if total_step >= 5:
-            #    pdb.set_trace()
-            #    exit(0)
-
+            #   --------------------------------
             #   ---   time step rolls here   ---
+            #   --------------------------------
+
             step += 1
             total_step += 1
             if total_step >= PRINT_FROM:
@@ -133,7 +118,7 @@ def test_run(env, agent,
                 agent.log(episode, step, total_step)
 
                 if plotter is not None: # and total_step >= agent.nb_rand_steps:
-                    plotter.process(logger, total_step)
+                    plotter.process(agent.logger, total_step)
 
                 agent.advance_one_step()
                 break

@@ -62,8 +62,7 @@ class Agent:
         approximator,
         step_size,
         batch_size,
-        log_agent=None, log_q_val=None, log_hist=None, 
-        log_memory=None, log_approx=None,
+        logger=None,
 
         seed=None):
 
@@ -90,6 +89,8 @@ class Agent:
         self._epsilon_random_decay = e_rand_decay
 
         self._this_step_rand_act = False
+
+        log_approx = logger.approx if logger is not None else None
 
         if approximator == 'aggregate':
             self.Q = AggregateApproximator(
@@ -134,48 +135,44 @@ class Agent:
         self._debug_cum_reward = 0
         self._debug_cum_done = 0
 
-
-        self.log_agent = log_agent
-        if log_agent is not None:
-            log_agent.add_param('discount', self._discount)
-            log_agent.add_param('nb_rand_steps', self.nb_rand_steps)
+        self.logger = logger
+        if self.logger is not None:
+            self.logger.agent.add_param('discount', self._discount)
+            self.logger.agent.add_param('nb_rand_steps', self.nb_rand_steps)
             
-            log_agent.add_param('e_rand_start', self._epsilon_random_start)
-            log_agent.add_param('e_rand_target', self._epsilon_random_target)
-            log_agent.add_param('e_rand_decay', self._epsilon_random_decay)
+            self.logger.agent.add_param('e_rand_start', self._epsilon_random_start)
+            self.logger.agent.add_param('e_rand_target', self._epsilon_random_target)
+            self.logger.agent.add_param('e_rand_decay', self._epsilon_random_decay)
 
-            log_agent.add_param('step_size', self._step_size)
-            log_agent.add_param('batch_size', self._batch_size)
+            self.logger.agent.add_param('step_size', self._step_size)
+            self.logger.agent.add_param('batch_size', self._batch_size)
 
-            log_agent.add_data_item('e_rand')
-            log_agent.add_data_item('rand_act')
+            self.logger.agent.add_data_item('e_rand')
+            self.logger.agent.add_data_item('rand_act')
 
-        self.log_q_val = log_q_val
-        if log_q_val is not None:
-            log_q_val.add_data_item('q_val')
-            log_q_val.add_data_item('series_E0') # Q at point [0.4, 0.035]
-            log_q_val.add_data_item('series_E1')
-            log_q_val.add_data_item('series_E2')
+        if self.logger is not None:
+            self.logger.q_val.add_data_item('q_val')
+            self.logger.q_val.add_data_item('series_E0') # Q at point [0.4, 0.035]
+            self.logger.q_val.add_data_item('series_E1')
+            self.logger.q_val.add_data_item('series_E2')
 
-        self.log_hist = log_hist
-        if log_hist is not None:
-            log_hist.add_data_item('Rt')
-            log_hist.add_data_item('St_pos')
-            log_hist.add_data_item('St_vel')
-            log_hist.add_data_item('At')
-            log_hist.add_data_item('done')
+        if self.logger is not None:
+            self.logger.hist.add_data_item('Rt')
+            self.logger.hist.add_data_item('St_pos')
+            self.logger.hist.add_data_item('St_vel')
+            self.logger.hist.add_data_item('At')
+            self.logger.hist.add_data_item('done')
 
-        self.log_memory = log_memory
-        if log_memory is not None:
-            log_memory.add_param('max_size', mem_size_max)
-            log_memory.add_param('enable_pmr', mem_enable_pmr)
-            log_memory.add_data_item('curr_size')
-            log_memory.add_data_item('hist_St')
-            log_memory.add_data_item('hist_At')
-            log_memory.add_data_item('hist_Rt_1')
-            log_memory.add_data_item('hist_St_1')
-            log_memory.add_data_item('hist_done')
-            log_memory.add_data_item('hist_error')
+        if self.logger is not None:
+            self.logger.memory.add_param('max_size', mem_size_max)
+            self.logger.memory.add_param('enable_pmr', mem_enable_pmr)
+            self.logger.memory.add_data_item('curr_size')
+            self.logger.memory.add_data_item('hist_St')
+            self.logger.memory.add_data_item('hist_At')
+            self.logger.memory.add_data_item('hist_Rt_1')
+            self.logger.memory.add_data_item('hist_St_1')
+            self.logger.memory.add_data_item('hist_done')
+            self.logger.memory.add_data_item('hist_error')
 
     def get_fingerprint(self):
         weights_sum = self.Q.get_weights_fingerprint()
@@ -195,18 +192,21 @@ class Agent:
         self._force_random_action = self._expl_start
 
     def log(self, episode, step, total_step):
+        
+        if self.logger is None:
+            return
 
         #
         #   Log agent
         #
-        self.log_agent.append(episode, step, total_step,
+        self.logger.agent.append(episode, step, total_step,
             e_rand=self._epsilon_random,
             rand_act=self._this_step_rand_act)
 
         #
         #   Log history
         #
-        self.log_hist.append(episode, step, total_step,
+        self.logger.hist.append(episode, step, total_step,
             Rt=self._trajectory[-1].reward,
             St_pos=self._trajectory[-1].observation[0],
             St_vel=self._trajectory[-1].observation[1],
@@ -250,7 +250,7 @@ class Agent:
             # aa = self._memory._hist_St[ptr:]
             # bb = self._memory._hist_St[0:ptr]
             # cc = np.concatenate((aa, bb))
-            self.log_memory.append(episode, step, total_step,
+            self.logger.memory.append(episode, step, total_step,
                 curr_size=self._memory.length(),
                 hist_St=np.concatenate((self._memory._hist_St[ptr:], self._memory._hist_St[0:ptr])),
                 hist_At=np.concatenate((self._memory._hist_At[ptr:], self._memory._hist_At[0:ptr])),
@@ -259,7 +259,7 @@ class Agent:
                 hist_done=np.concatenate((self._memory._hist_done[ptr:], self._memory._hist_done[0:ptr])),
                 hist_error=np.concatenate((self._memory._hist_error[ptr:], self._memory._hist_error[0:ptr])) )
         else:
-            self.log_memory.append(episode, step, total_step,
+            self.logger.memory.append(episode, step, total_step,
                 curr_size=None,
                 hist_St=None,
                 hist_At=None,
@@ -277,7 +277,7 @@ class Agent:
         else:
             est = np.array([[None, None, None]])
 
-        self.log_q_val.append(episode, step, total_step,
+        self.logger.q_val.append(episode, step, total_step,
             q_val=q_val,
             series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 

@@ -35,7 +35,7 @@ def main():
     ax_q_series = None # fig.add_subplot(155)
 
 
-    plotter = Plotter(plotting_enabled=True,
+    plotter = Plotter(realtime_plotting=True,
                       plot_every=1000,
                       disp_len=1000,
                       ax_qmax_wf=ax_qmax_wf,
@@ -58,11 +58,11 @@ def main():
     plt.show()
 
 class Plotter():
-    def __init__(self, plotting_enabled, plot_every, disp_len, 
+    def __init__(self, realtime_plotting, plot_every, disp_len, 
         ax_qmax_wf, ax_qmax_im, ax_policy,
         ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_avg_reward):
 
-        self.plotting_enabled = plotting_enabled
+        self.realtime_plotting = realtime_plotting
         self.plot_every = plot_every
         self.disp_len = disp_len
 
@@ -126,14 +126,14 @@ class Plotter():
 
 
     def conditional_plot(self, logger, current_total_step):
-        if current_total_step % self.plot_every == 0 and self.plotting_enabled:
+        if current_total_step % self.plot_every == 0 and self.realtime_plotting:
             self.plot(logger, current_total_step)
             return True
         else:
             return False
 
     def plot(self, logger, current_total_step):
-        if not self.plotting_enabled:
+        if not self.realtime_plotting:
             return
 
         extent = (-1.2, 0.5, -0.07, 0.07)
