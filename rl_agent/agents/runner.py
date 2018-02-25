@@ -19,6 +19,7 @@ def test_run(env, agent,
     #
     episode = -1
     total_step = -1
+    
     while True:
         
         episode += 1
@@ -28,28 +29,30 @@ def test_run(env, agent,
         if nb_total_steps is not None and total_step >= nb_total_steps:
             break
 
-        
-        step = 0
-        total_step += 1
-
-        print('episode:', episode, '/', nb_episodes,
-            'step', step, 'total_step', total_step)
-
-
-        print('-------------------------- total step -- ', total_step)
-
-        obs = env.reset()
-        print('STEP', obs)
-        
-        agent.reset()
-
-        agent.append_trajectory(observation=obs,
-                                reward=None,
-                                done=None)
-
-        done = False
+        initialise = True
 
         while True:
+
+            if initialise:
+                initialise = False
+
+                step = 0
+                total_step += 1
+
+
+                obs = env.reset()
+                agent.reset()
+
+                agent.append_trajectory(observation=obs,
+                                        reward=None,
+                                        done=None)
+
+                done = False
+
+
+
+
+
             
             if not done:
 
