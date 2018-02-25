@@ -78,8 +78,6 @@ class TestAgent(unittest.TestCase):
             nb_episodes=None,
             nb_total_steps=11000,
             expl_start=False,
-
-            agent_nb_actions=3,
             
             plotter=None,
             seed=self.seed)
@@ -125,8 +123,6 @@ class TestAgent(unittest.TestCase):
             nb_episodes=None,
             nb_total_steps=5000,
             expl_start=False,
-
-            agent_nb_actions=3,
             
             plotter=None,
             seed=self.seed)
@@ -173,8 +169,6 @@ class TestAgent(unittest.TestCase):
             nb_episodes=None,
             nb_total_steps=25000,
             expl_start=False,
-
-            agent_nb_actions=3,
             
             plotter=None,
             seed=self.seed)

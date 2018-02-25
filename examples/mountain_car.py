@@ -53,8 +53,6 @@ def test_single(logger=None, plotter=False, seed=None):
         nb_episodes=None,
         nb_total_steps=25000,
         expl_start=False,
-
-        agent_nb_actions=3,
         
         plotter=plotter,
         seed=seed)
