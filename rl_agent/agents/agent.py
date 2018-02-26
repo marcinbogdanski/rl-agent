@@ -122,10 +122,8 @@ class Agent:
         
 
         self._completed_episodes = 0
-        self._trajectory = []        # Agent saves history on it's way
-                                     # this resets every new episode
-
-        self._force_random_action = False
+        
+        self._reset()
 
         self._curr_total_step = 0
         self._curr_non_rand_step = 0
@@ -197,10 +195,9 @@ class Agent:
                 self._debug_cum_action, self._debug_cum_reward, \
                 self._debug_cum_done
 
-    def reset(self):
+    def _reset(self):
         self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
-
         self._force_random_action = self._expl_start
 
     def log(self, episode, step, total_step):
@@ -293,12 +290,13 @@ class Agent:
             q_val=q_val,
             series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
-    def advance_one_step(self):
+    def advance_one_step(self, done):
         self._curr_step += 1
         self._curr_total_step += 1
 
-        if self._trajectory[-1].done is True:
+        if done:
             self._completed_episodes += 1
+            self._reset()
 
         if self._curr_total_step > self.nb_rand_steps:
             self._curr_non_rand_step += 1
@@ -320,6 +318,11 @@ class Agent:
             #     * math.exp(-self._epsilon_random_decay * self._curr_non_rand_step)
 
     def pick_action(self, obs):
+        action = self._pick_action(obs)
+        self.append_action(action)
+        return action
+
+    def _pick_action(self, obs):
         assert isinstance(obs, np.ndarray)
         assert obs.shape == (2, )
 
@@ -367,7 +370,7 @@ class Agent:
 
 
 
-    def append_trajectory(self, observation, reward, done):
+    def observe(self, observation, reward, done):
         self._debug_cum_state += np.sum(observation)
 
         if reward is not None:
@@ -403,7 +406,8 @@ class Agent:
         self.eval_td_online()
 
     def eval_td_online(self):
-        self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
+        if len(self._trajectory) >= 2:
+            self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
 
     def eval_td_t(self, t):
         """TD update state-value for single state in trajectory
@@ -454,7 +458,7 @@ class Agent:
             else:
                 At_1 = self._trajectory[t+1].action
                 if At_1 is None:
-                    At_1 = self.pick_action(St)
+                    At_1 = self._pick_action(St)
                 Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
             self.Q.update(St, At, Tt)

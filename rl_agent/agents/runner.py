@@ -26,32 +26,20 @@ def test_run(env, agent,
         
 
         if done:
-
             obs, reward, done = env.reset(), 0.0, False
-            agent.reset()
-
-            agent.append_trajectory(observation=obs,
-                                    reward=reward,
-                                    done=done)
-
         else:
-
             obs, reward, done, _ = env.step(action)
 
             reward = round(reward)
 
-            agent.append_trajectory(
-                        observation=obs,
-                        reward=reward,
-                        done=done)
 
-            agent.learn()
+        agent.observe(obs, reward, done)
 
-
+        agent.learn()
         
         if not done:
             action = agent.pick_action(obs)
-            agent.append_action(action=action)
+
 
 
         agent.log(agent.completed_episodes, agent.step, agent.total_step)
@@ -75,7 +63,8 @@ def test_run(env, agent,
             print('espiode finished after iteration', agent.step)
 
 
-        agent.advance_one_step()
+
+        agent.advance_one_step(done)
 
 
         if  (nb_episodes is not None and agent.completed_episodes >= nb_episodes) or \
