@@ -45,7 +45,7 @@ def main():
                       ax_stats=ax_stats,
                       ax_memory=ax_memory,
                       ax_q_series=ax_q_series,
-                      ax_avg_reward=None)
+                      ax_reward=None)
 
     for total_step in range(0, len(logger.hist.total_steps)):
         print(total_step)
@@ -60,7 +60,7 @@ def main():
 class Plotter():
     def __init__(self, realtime_plotting, plot_every, disp_len, 
         ax_qmax_wf, ax_qmax_im, ax_policy,
-        ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_avg_reward):
+        ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_reward):
 
         self.realtime_plotting = realtime_plotting
         self.plot_every = plot_every
@@ -73,15 +73,16 @@ class Plotter():
         self.ax_stats = ax_stats
         self.ax_memory = ax_memory
         self.ax_q_series = ax_q_series
-        self.ax_avg_reward = ax_avg_reward
+        self.ax_reward = ax_reward
 
         self.q_val = None
         self.ser_X =  []
         self.ser_E0 = []
         self.ser_E1 = []
         self.ser_E2 = []
-        self.avg_X = []
-        self.avg_rew = []
+        self.rew_X = []
+        self.rew_ep = []
+        self.rew_avg = []
         
 
     def process(self, logger, current_total_step):
@@ -119,8 +120,9 @@ class Plotter():
                 num_ += 1
                 sum_ += logger.hist.steps[idx]
 
-            self.avg_X.append(current_total_step)
-            self.avg_rew.append(sum_ / num_)
+            self.rew_X.append(current_total_step)
+            self.rew_ep.append(logger.hist.steps[current_total_step])
+            self.rew_avg.append(sum_ / num_)
 
 
 
@@ -219,9 +221,10 @@ class Plotter():
                 self.ser_E1[-50:],
                 self.ser_E2[-50:])
 
-        if self.ax_avg_reward is not None:
-            self.ax_avg_reward.clear()
-            self.ax_avg_reward.plot(self.avg_X, self.avg_rew)
+        if self.ax_reward is not None:
+            self.ax_reward.clear()
+            self.ax_reward.plot(self.rew_X, self.rew_ep, color='red', marker='x')
+            self.ax_reward.plot(self.rew_X, self.rew_avg, color='blue', marker='x')
 
 def plot_q_val_wireframe(ax, q_val, extent, labels):
     """Plot 2d q_val array on 3d wireframe plot.

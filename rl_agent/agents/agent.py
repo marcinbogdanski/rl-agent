@@ -1,10 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import collections
-import pdb
-import random
-import math
-
+import tensorflow as tf
 
 from . import memory
 from .approximators import AggregateApproximator
@@ -12,8 +7,9 @@ from .approximators import TilesApproximator
 from .approximators import NeuralApproximator
 from .approximators import KerasApproximator
 
-import tensorflow as tf
 
+import random
+import pdb
 
 
 def _rand_argmax(vector):

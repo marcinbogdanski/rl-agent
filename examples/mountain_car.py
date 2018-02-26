@@ -37,12 +37,13 @@ def on_step_end(agent, reward, observation, done, action):
             'step_size', agent._step_size)
         print('EPISODE', agent.completed_episodes)
 
-    if plotter is not None and agent.total_step >= agent.nb_rand_steps:
+    if plotter is not None:
         plotter.process(agent.logger, agent.total_step)
-        res = plotter.conditional_plot(agent.logger, agent.total_step)
-        if res:
-            plt.pause(0.001)
-            pass
+        if agent.total_step >= agent.nb_rand_steps:
+            res = plotter.conditional_plot(agent.logger, agent.total_step)
+            if res:
+                plt.pause(0.001)
+                pass
 
     if done:
         print('espiode finished after iteration', agent.step)
@@ -57,14 +58,14 @@ def test_single():
         nb_actions=3,
         discount=0.99,
         expl_start=False,
-        nb_rand_steps=0,
+        nb_rand_steps=100000,
         e_rand_start=1.0,
         e_rand_target=0.1,
         e_rand_decay=1/10000,
-        mem_size_max=10000,
+        mem_size_max=100000,
         mem_enable_pmr=False,
-        approximator='tiles',
-        step_size=0.3,
+        approximator='keras',
+        step_size=0.00025,
         batch_size=1024,
 
         logger=logger,
@@ -72,7 +73,7 @@ def test_single():
 
     agent.register_callback('on_step_end', on_step_end)
 
-    rl.train_agent(env=env, agent=agent, total_steps=25000)
+    rl.train_agent(env=env, agent=agent, total_steps=200000)
 
     print('='*80)
     
@@ -109,6 +110,7 @@ def main():
     #   Random seeds
     #
     if args.seed is not None:
+        seed = args.seed
         print('Using random seed:', args.seed)
         random.seed(args.seed)
         np.random.seed(args.seed)
@@ -150,7 +152,7 @@ def main():
         ax_stats = None # fig.add_subplot(165)
         ax_memory = None # fig.add_subplot(2,1,2)
         ax_q_series = None # fig.add_subplot(155)
-        ax_avg_reward = fig.add_subplot(2,1,2)
+        ax_reward = fig.add_subplot(2,1,2)
         plotter = rl.logger.Plotter(  realtime_plotting=True,
                                       plot_every=1000,
                                       disp_len=1000,
@@ -161,7 +163,7 @@ def main():
                                       ax_stats=ax_stats,
                                       ax_memory=ax_memory,
                                       ax_q_series=ax_q_series,
-                                      ax_avg_reward=ax_avg_reward  )
+                                      ax_reward=ax_reward  )
     else:
         plotter = None
 
