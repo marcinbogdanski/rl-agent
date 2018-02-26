@@ -1,6 +1,6 @@
 
 
-def train_agent(env, agent, total_steps):
+def train_agent(env, agent, total_steps, target_avg_reward=None):
 
     agent.reset()
 
@@ -31,7 +31,12 @@ def train_agent(env, agent, total_steps):
         agent.next_step(done)
 
         if agent.total_step > total_steps:
-            break     
+            break
+
+        if target_avg_reward is not None:
+            avg_reward = agent.get_avg_reward(50)
+            if avg_reward is not None and avg_reward > target_avg_reward:
+                break
 
         #   ---    time step ends here    ---
         #   ---------------------------------

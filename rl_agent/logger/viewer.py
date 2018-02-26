@@ -80,9 +80,6 @@ class Plotter():
         self.ser_E0 = []
         self.ser_E1 = []
         self.ser_E2 = []
-        self.rew_X = []
-        self.rew_ep = []
-        self.rew_avg = []
         
 
     def process(self, logger, current_total_step):
@@ -105,27 +102,6 @@ class Plotter():
             self.hist_St_1 = logger.memory.data['hist_St_1'][current_total_step]
             self.hist_done = logger.memory.data['hist_done'][current_total_step]
             self.hist_error = logger.memory.data['hist_error'][current_total_step]
-
-        if logger.hist.data['done'][current_total_step] == True:
-
-            done = logger.hist.data['done']
-            idx_end_steps = np.where(done)[0]
-
-            sum_ = 0
-            num_ = 0
-            for i, idx in enumerate(reversed(idx_end_steps)):
-                if i >= 50:
-                    break
-
-                num_ += 1
-                sum_ += logger.hist.steps[idx]
-
-            self.rew_X.append(current_total_step)
-            self.rew_ep.append(-logger.hist.steps[current_total_step])
-            self.rew_avg.append(-sum_ / num_)
-
-
-
 
     def conditional_plot(self, logger, current_total_step):
         if current_total_step % self.plot_every == 0 and self.realtime_plotting:
@@ -223,8 +199,6 @@ class Plotter():
 
         if self.ax_reward is not None:
             self.ax_reward.clear()
-            self.ax_reward.plot(self.rew_X, self.rew_ep, color='red', marker='x')
-            self.ax_reward.plot(self.rew_X, self.rew_avg, color='blue', marker='x')
 
             epsumm_end = logger.epsumm.data['end']    # list of ints
             epsumm_rew = logger.epsumm.data['reward'] # list of floats
@@ -235,12 +209,11 @@ class Plotter():
             for i in range(len(epsumm_end)):
                 ep_ends.append(epsumm_end[i])
                 ep_rewards.append(epsumm_rew[i])
-                ith_chunk = epsumm_rew[i-49:i+1]
-
+                ith_chunk = epsumm_rew[max(0, i-49):i+1]
                 ep_avg_rew.append(sum(ith_chunk) / len(ith_chunk))
 
-            self.ax_reward.plot(ep_ends, ep_rewards, color='red', marker='o', markerfacecolor='None')
-            self.ax_reward.plot(ep_ends, ep_avg_rew, color='green', marker='o', markerfacecolor='None')
+            self.ax_reward.plot(ep_ends, ep_rewards, color='black', marker='o', markerfacecolor='None')
+            self.ax_reward.plot(ep_ends, ep_avg_rew, color='gray', marker='o', markerfacecolor='None')
 
 def plot_q_val_wireframe(ax, q_val, extent, labels):
     """Plot 2d q_val array on 3d wireframe plot.

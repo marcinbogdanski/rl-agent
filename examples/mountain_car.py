@@ -73,7 +73,7 @@ def test_single():
 
     agent.register_callback('on_step_end', on_step_end)
 
-    rl.train_agent(env=env, agent=agent, total_steps=200000)
+    rl.train_agent(env=env, agent=agent, total_steps=200000, target_avg_reward=-200)
 
     print('='*80)
     

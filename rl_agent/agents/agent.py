@@ -210,6 +210,14 @@ class Agent:
                 self._debug_cum_action, self._debug_cum_reward, \
                 self._debug_cum_done
 
+    def get_avg_reward(self, nb_episodes):
+        hist_chunk = self._episodes_history[-nb_episodes:]
+        if len(hist_chunk) == 0:
+            return None
+        else:
+            sum_ = sum(ep_hist.total_reward for ep_hist in hist_chunk)
+            return sum_ / len(hist_chunk)
+
     def reset(self):
         if len(self._trajectory) > 0:
             # save summary into episode history
@@ -230,16 +238,7 @@ class Agent:
             if self.logger is not None:
                 self.logger.epsumm.append(
                     self.completed_episodes, self.step, self.total_step,
-                    start=ep_start, end=ep_end, reward=total_reward)
-
-            print('EPISODES:')
-            for i in range(len(self._episodes_history)):
-                print('  EP', i)
-                print('  st:', self._episodes_history[i].start)
-                print('  en:', self._episodes_history[i].end)
-                print('  len:', self._episodes_history[i].length)
-                print('  rew:', self._episodes_history[i].total_reward)
-            
+                    start=ep_start, end=ep_end, reward=total_reward)           
 
         self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
