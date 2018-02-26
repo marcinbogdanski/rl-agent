@@ -100,6 +100,7 @@ class Logger():
         self.hist = Log('History', 'History of all states visited')
         self.memory = Log('Memory', 'Agent full memory dump on given timestep')
         self.approx = Log('Approx', 'Approximator')
+        self.epsumm = Log('Episodes')
 
     def __str__(self):
         res = 'Date time: ' + self.datetime + '\n' + \

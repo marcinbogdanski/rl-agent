@@ -30,8 +30,9 @@ def _rand_argmax(vector):
 
 class HistoryData:
     """One piece of agent trajectory"""
-    def __init__(self, observation, reward, done):
+    def __init__(self, total_step, observation, reward, done):
         assert isinstance(observation, np.ndarray)
+        self.total_step = total_step
         self.observation = observation
         self.reward = reward
         self.action = None
@@ -40,6 +41,15 @@ class HistoryData:
     def __str__(self):
         return 'obs={0}, rew={1} done={2}   act={3}'.format(
             self.observation, self.reward, self.done, self.action)
+
+class EpisodeData:
+    """Episode summary"""
+    def __init__(self, start, end, length, total_reward):
+        assert end-start == length-1
+        self.start = start
+        self.end = end
+        self.length = length
+        self.total_reward = total_reward
 
 
 class Agent:
@@ -121,6 +131,8 @@ class Agent:
 
         self._callback_on_step_end = None
         
+        self._episodes_history = []
+        self._trajectory = []
         self.reset()
 
         self._curr_total_step = 0
@@ -170,6 +182,11 @@ class Agent:
             self.logger.memory.add_data_item('hist_done')
             self.logger.memory.add_data_item('hist_error')
 
+        if self.logger is not None:
+            self.logger.epsumm.add_data_item('start')
+            self.logger.epsumm.add_data_item('end')
+            self.logger.epsumm.add_data_item('reward')
+
     @property
     def step(self):
         return self._curr_step
@@ -194,6 +211,36 @@ class Agent:
                 self._debug_cum_done
 
     def reset(self):
+        if len(self._trajectory) > 0:
+            # save summary into episode history
+            ep_start = self._trajectory[0].total_step
+            ep_end = self._trajectory[-1].total_step
+            ep_len = len(self._trajectory)
+
+            total_reward = 0
+            for i in range(len(self._trajectory)):
+                if self._trajectory[i].reward is not None:
+                    total_reward += self._trajectory[i].reward
+
+            ep_hist = EpisodeData(ep_start, ep_end, ep_len, total_reward)
+            self._episodes_history.append(ep_hist)
+
+            self._completed_episodes += 1
+
+            if self.logger is not None:
+                self.logger.epsumm.append(
+                    self.completed_episodes, self.step, self.total_step,
+                    start=ep_start, end=ep_end, reward=total_reward)
+
+            print('EPISODES:')
+            for i in range(len(self._episodes_history)):
+                print('  EP', i)
+                print('  st:', self._episodes_history[i].start)
+                print('  en:', self._episodes_history[i].end)
+                print('  len:', self._episodes_history[i].length)
+                print('  rew:', self._episodes_history[i].total_reward)
+            
+
         self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
         self._force_random_action = self._expl_start
@@ -324,7 +371,6 @@ class Agent:
         
 
         if done:
-            self._completed_episodes += 1
             self.reset()
 
         if self._curr_total_step > self.nb_rand_steps:
@@ -411,7 +457,7 @@ class Agent:
             self._debug_cum_done += int(done)
 
         self._trajectory.append(
-            HistoryData(observation, reward, done))
+            HistoryData(self._curr_total_step, observation, reward, done))
 
     def append_action(self, action):
         self._debug_cum_action += np.sum(action)

@@ -121,8 +121,8 @@ class Plotter():
                 sum_ += logger.hist.steps[idx]
 
             self.rew_X.append(current_total_step)
-            self.rew_ep.append(logger.hist.steps[current_total_step])
-            self.rew_avg.append(sum_ / num_)
+            self.rew_ep.append(-logger.hist.steps[current_total_step])
+            self.rew_avg.append(-sum_ / num_)
 
 
 
@@ -225,6 +225,22 @@ class Plotter():
             self.ax_reward.clear()
             self.ax_reward.plot(self.rew_X, self.rew_ep, color='red', marker='x')
             self.ax_reward.plot(self.rew_X, self.rew_avg, color='blue', marker='x')
+
+            epsumm_end = logger.epsumm.data['end']    # list of ints
+            epsumm_rew = logger.epsumm.data['reward'] # list of floats
+
+            ep_ends = []
+            ep_rewards = []
+            ep_avg_rew = []
+            for i in range(len(epsumm_end)):
+                ep_ends.append(epsumm_end[i])
+                ep_rewards.append(epsumm_rew[i])
+                ith_chunk = epsumm_rew[i-49:i+1]
+
+                ep_avg_rew.append(sum(ith_chunk) / len(ith_chunk))
+
+            self.ax_reward.plot(ep_ends, ep_rewards, color='red', marker='o', markerfacecolor='None')
+            self.ax_reward.plot(ep_ends, ep_avg_rew, color='green', marker='o', markerfacecolor='None')
 
 def plot_q_val_wireframe(ax, q_val, extent, labels):
     """Plot 2d q_val array on 3d wireframe plot.
