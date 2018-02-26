@@ -121,7 +121,7 @@ class Agent:
 
         
 
-        self._episode = 0
+        self._completed_episodes = 0
         self._trajectory = []        # Agent saves history on it's way
                                      # this resets every new episode
 
@@ -174,6 +174,18 @@ class Agent:
             self.logger.memory.add_data_item('hist_done')
             self.logger.memory.add_data_item('hist_error')
 
+    @property
+    def step(self):
+        return self._curr_step
+
+    @property
+    def total_step(self):
+        return self._curr_total_step
+
+    @property
+    def completed_episodes(self):
+        return self._completed_episodes
+
     def get_fingerprint(self):
         weights_sum = self.Q.get_weights_fingerprint()
 
@@ -186,7 +198,7 @@ class Agent:
                 self._debug_cum_done
 
     def reset(self):
-        self._episode += 1
+        self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
 
         self._force_random_action = self._expl_start
@@ -282,7 +294,11 @@ class Agent:
             series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
     def advance_one_step(self):
+        self._curr_step += 1
         self._curr_total_step += 1
+
+        if self._trajectory[-1].done is True:
+            self._completed_episodes += 1
 
         if self._curr_total_step > self.nb_rand_steps:
             self._curr_non_rand_step += 1
@@ -383,6 +399,11 @@ class Agent:
         #         raise ValueError('Action from last state has non-zero val.')
 
 
+    def learn(self):
+        self.eval_td_online()
+
+    def eval_td_online(self):
+        self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
 
     def eval_td_t(self, t):
         """TD update state-value for single state in trajectory
@@ -438,7 +459,4 @@ class Agent:
 
             self.Q.update(St, At, Tt)
             
-
-    def eval_td_online(self):
-        self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
 
