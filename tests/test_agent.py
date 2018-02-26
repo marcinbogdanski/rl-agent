@@ -46,10 +46,12 @@ class TestAgent(unittest.TestCase):
 
         
     def tearDown(self):
-        print('teardown')
+        pass
 
     def test_10_run_keras_1(self):
-        print('test run 1')
+        def on_step_end(agent, reward, observation, done, action):
+            if agent.total_step % 1000 == 0:
+                print('test_10_run_keras_1', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -71,15 +73,11 @@ class TestAgent(unittest.TestCase):
             logger=None,
             seed=self.seed)
 
-        trained_agent = rl.test_run(
-            env=env,
-            agent=agent,
+        agent.register_callback('on_step_end', on_step_end)
 
-            nb_total_steps=11000,
-            
-            plotter=None)
+        rl.train_agent(env=env, agent=agent, total_steps=11000)
 
-        fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
+        fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
@@ -92,6 +90,9 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(done, 1)
 
     def test_20_run_tile_1(self):
+        def on_step_end(agent, reward, observation, done, action):
+            if agent.total_step % 1000 == 0:
+                print('test_20_run_tile_1', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -113,15 +114,11 @@ class TestAgent(unittest.TestCase):
             logger=None,
             seed=self.seed)
 
-        trained_agent = rl.test_run(
-            env=env,
-            agent=agent,
+        agent.register_callback('on_step_end', on_step_end)
 
-            nb_total_steps=5000,
-            
-            plotter=None)
+        rl.train_agent(env=env, agent=agent, total_steps=5000)
 
-        fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
+        fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
@@ -135,6 +132,9 @@ class TestAgent(unittest.TestCase):
 
 
     def test_30_run_aggregate_1(self):
+        def on_step_end(agent, reward, observation, done, action):
+            if agent.total_step % 1000 == 0:
+                print('test_30_run_aggregate_1', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -156,15 +156,11 @@ class TestAgent(unittest.TestCase):
             logger=None,
             seed=self.seed)
 
-        trained_agent = rl.test_run(
-            env=env,
-            agent=agent,
+        agent.register_callback('on_step_end', on_step_end)
 
-            nb_total_steps=25000,
-            
-            plotter=None)
+        rl.train_agent(env=env, agent=agent, total_steps=25000)
 
-        fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
+        fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)

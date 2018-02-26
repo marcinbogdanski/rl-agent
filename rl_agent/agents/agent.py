@@ -312,11 +312,6 @@ class Agent:
 
         self.log(self.completed_episodes, self.step, self.total_step)
 
-        # -- roll into next time step --
-
-        self._curr_step += 1
-        self._curr_total_step += 1
-
         if self._callback_on_step_end is not None:
             self._callback_on_step_end(
                 agent=self,
@@ -324,6 +319,13 @@ class Agent:
                 observation=self._trajectory[-1].observation,
                 done=self._trajectory[-1].done,
                 action=self._trajectory[-1].action)
+
+        # -- roll into next time step --
+
+        self._curr_step += 1
+        self._curr_total_step += 1
+
+        
 
         if done:
             self._completed_episodes += 1

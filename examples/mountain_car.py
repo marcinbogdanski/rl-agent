@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 
 import tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # hide TF info msgs, keep warnings
 
 import subprocess
 import socket
@@ -21,9 +22,32 @@ import gym
 import rl_agent as rl
 
 
+# TODO: move globals into Program class
+logger = None
+plotter = None
+seed = None
 
+def on_step_end(agent, reward, observation, done, action):
+    global plotter
 
-def test_single(logger=None, plotter=False, seed=None):
+    if agent.total_step % 1000 == 0:
+        print()
+        print('total_step', agent.total_step,
+            'e_rand', agent._epsilon_random,
+            'step_size', agent._step_size)
+        print('EPISODE', agent.completed_episodes)
+
+    if plotter is not None and agent.total_step >= agent.nb_rand_steps:
+        plotter.process(agent.logger, agent.total_step)
+        res = plotter.conditional_plot(agent.logger, agent.total_step)
+        if res:
+            plt.pause(0.001)
+            pass
+
+    if done:
+        print('espiode finished after iteration', agent.step)
+
+def test_single():
     
     env = gym.make('MountainCar-v0').env
     if seed is not None:
@@ -46,13 +70,9 @@ def test_single(logger=None, plotter=False, seed=None):
         logger=logger,
         seed=seed)
 
-    rl.test_run(
-        env=env,
-        agent=agent,
+    agent.register_callback('on_step_end', on_step_end)
 
-        nb_total_steps=25000,
-        
-        plotter=plotter)
+    rl.train_agent(env=env, agent=agent, total_steps=25000)
 
     print('='*80)
     
@@ -65,6 +85,7 @@ def test_single(logger=None, plotter=False, seed=None):
 
 
 def main():
+    global logger, plotter, seed
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--seed', type=int, help='Random number generators seeds. Randomised by default.')
@@ -148,7 +169,7 @@ def main():
     #   Run application
     #
     try:
-        test_single(logger=logger, plotter=plotter, seed=args.seed)
+        test_single()
     finally:
         if args.logfile is not None:
             logger.save(args.logfile)
