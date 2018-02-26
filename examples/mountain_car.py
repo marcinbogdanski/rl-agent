@@ -35,7 +35,7 @@ def on_step_end(agent, reward, observation, done, action):
         print('total_step', agent.total_step,
             'e_rand', agent._epsilon_random,
             'step_size', agent._step_size)
-        print('EPISODE', agent.completed_episodes)
+        print('EPISODE', agent.completed_episodes, agent.get_avg_reward(50))
 
     if plotter is not None:
         plotter.process(agent.logger, agent.total_step)

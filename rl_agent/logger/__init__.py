@@ -1,2 +1,2 @@
 from .logger import Logger, Log
-from .viewer import Plotter
+from .plotter import Plotter
