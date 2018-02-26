@@ -1,63 +1,58 @@
 import argparse
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
+import os
 
 import rl_agent as rl
 
 
-
+import pdb
 
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('filename', help='Data log filename')
+    parser.add_argument('dirname', help='Data log filename')
     args = parser.parse_args()
 
-    logger = rl.logger.Logger()
-    logger.load(args.filename)
+    filenames = [f for f in os.listdir(args.dirname)]
 
-    print()
-    print(logger)
-    print(logger.env)
-    print(logger.agent)
-    print(logger.q_val)
-    print(logger.hist)
-    print(logger.approx)
+    
 
     fig = plt.figure()
-    ax_qmax_wf = fig.add_subplot(2,4,1, projection='3d')
-    ax_qmax_im = fig.add_subplot(2,4,2)
-    ax_policy = fig.add_subplot(2,4,3)
-    ax_trajectory = fig.add_subplot(2,4,4)
-    ax_stats = None # fig.add_subplot(165)
-    ax_memory = None # fig.add_subplot(2,1,2)
-    ax_q_series = None # fig.add_subplot(155)
-    ax_reward = fig.add_subplot(2,1,2)
-    plotter = rl.logger.Plotter(realtime_plotting=True,
-                                plot_every=10000,
-                                disp_len=1000,
-                                ax_qmax_wf=ax_qmax_wf,
-                                ax_qmax_im=ax_qmax_im,
-                                ax_policy=ax_policy,
-                                ax_trajectory=ax_trajectory,
-                                ax_stats=ax_stats,
-                                ax_memory=ax_memory,
-                                ax_q_series=ax_q_series,
-                                ax_reward=ax_reward  )
+    ax_reward = fig.add_subplot(1, 1, 1)
 
-    for total_step in range(0, len(logger.hist.total_steps)):
-        print(total_step)
 
-        plotter.process(logger, total_step)
-        #res = plotter.conditional_plot(logger, total_step)
-        # plotter.plot(logger, total_step)
-        # plt.pause(0.1)
+    for filename in filenames:
+        filepath = os.path.join(args.dirname, filename)
+        if os.path.isfile(filepath) and filepath.endswith('.log'):
+            print(filepath)
 
-    plotter.plot(logger, total_step)
-    plt.pause(0.1)
+            logger = rl.logger.Logger()
+            logger.load(filepath)
 
+            epsumm_end = logger.epsumm.data['end']    # list of ints
+            epsumm_rew = logger.epsumm.data['reward'] # list of floats
+
+            ep_ends = []
+            ep_rewards = []
+            ep_avg_rew = []
+            for i in range(len(epsumm_end)):
+                ep_ends.append(epsumm_end[i])
+                ep_rewards.append(epsumm_rew[i])
+                ith_chunk = epsumm_rew[max(0, i-49):i+1]
+                ep_avg_rew.append(sum(ith_chunk) / len(ith_chunk))
+
+            ax_reward.plot(ep_ends, ep_rewards, marker='.', markerfacecolor='None', label=filename)
+            #ax_reward.plot(ep_ends, ep_avg_rew, color='gray', marker='.', markerfacecolor='None')
+
+            plt.legend()
+            
+            plt.pause(0.1)
+
+    plt.legend()
     plt.show()
+
 
 
 if __name__ == '__main__':
