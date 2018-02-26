@@ -1,14 +1,11 @@
 import numpy as np
 import pdb
 
-import random
-
 class Memory:
     def __init__(self, state_shape, act_shape, 
                  dtypes, max_len,
                  enable_pmr=False,
-                 initial_pmr_error=1000.0,
-                 seed=None):
+                 initial_pmr_error=1000.0):
         assert isinstance(state_shape, tuple)
         assert isinstance(act_shape, tuple)
         assert isinstance(dtypes, tuple)
@@ -17,9 +14,6 @@ class Memory:
         assert isinstance(max_len, int)
         assert max_len > 0
 
-        self._random = random.Random()
-        if seed is not None:
-            self._random.seed(seed)
         self._index_range = list(range(max_len))
 
         self._max_len = max_len
@@ -159,18 +153,12 @@ class Memory:
         assert batch_len > 0
 
         if not self._enable_pmr:
-            #indices = np.random.randint(
-            #    low=0, high=self._curr_len, size=batch_len, dtype=int)
+            indices = np.random.randint(
+                low=0, high=self._curr_len, size=batch_len, dtype=int)
 
-            indices_pre = self._random.sample(self._index_range, batch_len)
-            #print('BATCH')
-
-            indices_pre = np.array(indices_pre)
-
-            indices = (indices_pre + self._curr_insert_ptr) % self._curr_len
-
-            #for i in range(len(indices)):
-            #    print(indices_pre[i], self._hist_St[indices[i]])
+            #indices_pre = self._random.sample(self._index_range, batch_len)
+            #indices_pre = np.array(indices_pre)
+            #indices = (indices_pre + self._curr_insert_ptr) % self._curr_len
 
         else:
             cdf = np.cumsum(self._hist_error+0.01)

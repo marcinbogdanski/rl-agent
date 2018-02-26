@@ -8,7 +8,6 @@ from .approximators import NeuralApproximator
 from .approximators import KerasApproximator
 
 
-import random
 import pdb
 
 
@@ -20,7 +19,7 @@ def _rand_argmax(vector):
 
 
 
-        
+
 
 
 
@@ -68,13 +67,7 @@ class Agent:
         approximator,
         step_size,
         batch_size,
-        logger=None,
-
-        seed=None):
-
-        self._random = random.Random()
-        if seed is not None:
-            self._random.seed(seed)
+        logger=None):
 
         self._nb_actions = nb_actions
         self._action_space = list(range(nb_actions))
@@ -119,8 +112,7 @@ class Agent:
             dtypes=(float, int, float, float, bool, float),
             max_len=mem_size_max,
             enable_pmr=mem_enable_pmr,
-            initial_pmr_error=1000.0,
-            seed=seed)
+            initial_pmr_error=1000.0)
 
         self._step_size = step_size  # usually noted as alpha in literature
         self._batch_size = batch_size
@@ -405,21 +397,17 @@ class Agent:
 
         if self._curr_total_step < self.nb_rand_steps:
             self._this_step_rand_act = True
-            # return np.random.choice(self._action_space)
-            result = self._random.randint(0, self._nb_actions-1)
-            return result
+            return np.random.choice(self._action_space)
 
         if self._force_random_action:
             self._force_random_action = False
             self._this_step_rand_act = True
             return np.random.choice(self._action_space)
 
-        #if np.random.rand() < self._epsilon_random:
-        if self._random.random() < self._epsilon_random:
+        if np.random.rand() < self._epsilon_random:
             # pick random action
             self._this_step_rand_act = True
-            # res = np.random.choice(self._action_space)
-            res = self._random.randint(0, self._nb_actions-1)
+            res = np.random.choice(self._action_space)
 
         else:
             self._this_step_rand_act = False

@@ -68,8 +68,7 @@ def test_single():
         step_size=0.00025,
         batch_size=1024,
 
-        logger=logger,
-        seed=seed)
+        logger=logger)
 
     agent.register_callback('on_step_end', on_step_end)
 

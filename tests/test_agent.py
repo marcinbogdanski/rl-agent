@@ -52,6 +52,8 @@ class TestAgent(unittest.TestCase):
         def on_step_end(agent, reward, observation, done, action):
             if agent.total_step % 1000 == 0:
                 print('test_10_run_keras_1', agent.total_step)
+            if done:
+                print('episode terminated at', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -60,7 +62,7 @@ class TestAgent(unittest.TestCase):
             nb_actions=3,
             discount=0.99,
             expl_start=False,
-            nb_rand_steps=10000,
+            nb_rand_steps=22000,
             e_rand_start=1.0,
             e_rand_target=0.1,
             e_rand_decay=1/10000,
@@ -70,29 +72,30 @@ class TestAgent(unittest.TestCase):
             step_size=0.00025,
             batch_size=64,
 
-            logger=None,
-            seed=self.seed)
+            logger=None)
 
         agent.register_callback('on_step_end', on_step_end)
 
-        rl.train_agent(env=env, agent=agent, total_steps=11000)
+        rl.train_agent(env=env, agent=agent, total_steps=23000)
 
         fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
 
-        self.assertEqual(fp, -2253.8704068369316)
-        self.assertEqual(ws, 3396.6942402124405)
-        self.assertEqual(st, -5640.564647049372)
-        self.assertEqual(act, 10988)
-        self.assertEqual(rew, -10999)
+        self.assertEqual(fp, -8093.627516248174)
+        self.assertEqual(ws, 3562.3154466748238)
+        self.assertEqual(st, -11822.942962922998)
+        self.assertEqual(act, 23165)
+        self.assertEqual(rew, -22999.0)
         self.assertEqual(done, 1)
 
     def test_20_run_tile_1(self):
         def on_step_end(agent, reward, observation, done, action):
             if agent.total_step % 1000 == 0:
                 print('test_20_run_tile_1', agent.total_step)
+            if done:
+                print('episode terminated at', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -111,8 +114,7 @@ class TestAgent(unittest.TestCase):
             step_size=0.3,
             batch_size=64,
 
-            logger=None,
-            seed=self.seed)
+            logger=None)
 
         agent.register_callback('on_step_end', on_step_end)
 
@@ -123,18 +125,20 @@ class TestAgent(unittest.TestCase):
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
 
-        self.assertEqual(fp, -3685.9990078639967)
-        self.assertEqual(ws, -1293.1786010586356)
-        self.assertEqual(st, -2471.820406805361)
-        self.assertEqual(act, 5073)
-        self.assertEqual(rew, -4997)
-        self.assertEqual(done, 3)
+        self.assertEqual(fp, -3695.0214844234456)
+        self.assertEqual(ws, -1310.189102073466)
+        self.assertEqual(st, -2456.8323823499795)
+        self.assertEqual(act, 5068)
+        self.assertEqual(rew, -4998.0)
+        self.assertEqual(done, 2)
 
 
     def test_30_run_aggregate_1(self):
         def on_step_end(agent, reward, observation, done, action):
             if agent.total_step % 1000 == 0:
                 print('test_30_run_aggregate_1', agent.total_step)
+            if done:
+                print('episode terminated at', agent.total_step)
 
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
@@ -153,21 +157,20 @@ class TestAgent(unittest.TestCase):
             step_size=0.3,
             batch_size=64,
 
-            logger=None,
-            seed=self.seed)
+            logger=None)
 
         agent.register_callback('on_step_end', on_step_end)
 
-        rl.train_agent(env=env, agent=agent, total_steps=25000)
+        rl.train_agent(env=env, agent=agent, total_steps=30000)
 
         fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
 
-        self.assertEqual(fp, -20561.460994556)
-        self.assertEqual(ws, -8042.498761462002)
-        self.assertEqual(st, -12583.962233094)
-        self.assertEqual(act, 25063)
-        self.assertEqual(rew, -24999)
+        self.assertEqual(fp, -24664.755330808075)
+        self.assertEqual(ws, -9677.655505872985)
+        self.assertEqual(st, -15033.09982493509)
+        self.assertEqual(act, 30044)
+        self.assertEqual(rew, -29999.0)
         self.assertEqual(done, 1)
