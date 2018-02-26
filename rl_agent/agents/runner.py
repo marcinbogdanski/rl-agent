@@ -20,8 +20,7 @@ def test_run(env, agent,
     episode = -1
     total_step = -1
 
-    initialise = True
-       
+    done = True
 
     while True:
 
@@ -29,8 +28,7 @@ def test_run(env, agent,
         #   ---   time step starts here   ---
         #   ---------------------------------
 
-        if initialise:
-            initialise = False
+        if done:
 
             episode += 1           
             total_step += 1
@@ -63,7 +61,6 @@ def test_run(env, agent,
 
         
         if not done:
-
             action = agent.pick_action(obs)
             agent.append_action(action=action)
 
@@ -73,7 +70,7 @@ def test_run(env, agent,
         if total_step % 1000 == 0:
             print()
             print('total_step', total_step,
-                'e_rand', agent._epsilon_random, 
+                'e_rand', agent._epsilon_random,
                 'step_size', agent._step_size)
 
         if plotter is not None and total_step >= agent.nb_rand_steps:
@@ -83,21 +80,16 @@ def test_run(env, agent,
                 plt.pause(0.001)
                 pass
 
+
         agent.advance_one_step()
 
 
-        if nb_episodes is not None and episode >= nb_episodes:
-                break
-        if nb_total_steps is not None and total_step >= nb_total_steps:
+        if  (nb_episodes is not None and episode >= nb_episodes) or \
+            (nb_total_steps is not None and total_step >= nb_total_steps):
                 break
 
         if done:
-
             print('espiode finished after iteration', step)
-
-            initialise = True
-
-            continue
 
         #   ---------------------------------
         #   ---    time step ends here    ---
