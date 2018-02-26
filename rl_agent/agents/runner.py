@@ -25,21 +25,16 @@ def test_run(env, agent,
 
     while True:
 
+        #   ---------------------------------
+        #   ---   time step starts here   ---
+        #   ---------------------------------
+
         if initialise:
             initialise = False
 
-
-            episode += 1
-            if nb_episodes is not None and episode >= nb_episodes:
-                break
-
-            if nb_total_steps is not None and total_step >= nb_total_steps:
-                break
-
-
-            step = 0
+            episode += 1           
             total_step += 1
-
+            step = 0
 
             obs = env.reset()
             agent.reset()
@@ -50,8 +45,20 @@ def test_run(env, agent,
 
             done = False
 
+        else:
+            step += 1
+            total_step += 1
 
+            obs, reward, done, _ = env.step(action)
 
+            reward = round(reward)
+
+            agent.append_trajectory(
+                        observation=obs,
+                        reward=reward,
+                        done=done)
+
+            agent.eval_td_online()
 
 
         
@@ -78,8 +85,13 @@ def test_run(env, agent,
 
         agent.advance_one_step()
 
-        if done or \
-            (nb_total_steps is not None and total_step >= nb_total_steps):
+
+        if nb_episodes is not None and episode >= nb_episodes:
+                break
+        if nb_total_steps is not None and total_step >= nb_total_steps:
+                break
+
+        if done:
 
             print('espiode finished after iteration', step)
 
@@ -87,23 +99,9 @@ def test_run(env, agent,
 
             continue
 
-        #   --------------------------------
-        #   ---   time step rolls here   ---
-        #   --------------------------------
-
-        step += 1
-        total_step += 1
-
-        obs, reward, done, _ = env.step(action)
-
-        reward = round(reward)
-
-        agent.append_trajectory(
-                    observation=obs,
-                    reward=reward,
-                    done=done)
-
-        agent.eval_td_online()
+        #   ---------------------------------
+        #   ---    time step ends here    ---
+        #   ---------------------------------
         
 
 
