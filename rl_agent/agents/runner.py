@@ -7,15 +7,42 @@ from .agent import Agent
 
 import pdb
 
-def test_run(env, agent,
+g_plotter = None
 
-    nb_episodes, nb_total_steps, expl_start,
+def on_step_end(agent, reward, observation, done, action):
+    global g_plotter
 
-    plotter=None,
-    seed=None):
+    if agent.total_step % 1000 == 0:
+        print()
+        print('total_step', agent.total_step,
+            'e_rand', agent._epsilon_random,
+            'step_size', agent._step_size)
+        print('EPISODE', agent.completed_episodes)
+
+    if g_plotter is not None and agent.total_step >= agent.nb_rand_steps:
+        g_plotter.process(agent.logger, agent.total_step)
+        res = g_plotter.conditional_plot(agent.logger, agent.total_step)
+        if res:
+            plt.pause(0.001)
+            pass
+
+
+    if done:
+        print('espiode finished after iteration', agent.step)
+
+
+def test_run(env, agent, nb_total_steps,
+
+    plotter=None):
+
+    global g_plotter  # yikes, hacky
+
+    g_plotter = plotter
 
 
     done = True
+    agent.reset()
+    agent.register_callback('on_step_end', on_step_end)
 
     while True:
 
@@ -23,62 +50,28 @@ def test_run(env, agent,
         #   ---   time step starts here   ---
         #   ---------------------------------
 
-        
-
         if done:
-            obs, reward, done = env.reset(), 0.0, False
+            obs, reward, done = env.reset(), None, False
         else:
             obs, reward, done, _ = env.step(action)
-
-            reward = round(reward)
 
 
         agent.observe(obs, reward, done)
 
         agent.learn()
         
-        if not done:
-            action = agent.pick_action(obs)
+        action = agent.take_action(obs)
 
+        agent.next_step(done)
 
-
-        agent.log(agent.completed_episodes, agent.step, agent.total_step)
-
-        if agent.total_step % 1000 == 0:
-            print()
-            print('total_step', agent.total_step,
-                'e_rand', agent._epsilon_random,
-                'step_size', agent._step_size)
-            print('EPISODE', agent.completed_episodes)
-
-        if plotter is not None and agent.total_step >= agent.nb_rand_steps:
-            plotter.process(agent.logger, agent.total_step)
-            res = plotter.conditional_plot(agent.logger, agent.total_step)
-            if res:
-                plt.pause(0.001)
-                pass
-
-
-        if done:
-            print('espiode finished after iteration', agent.step)
-
-
-
-        agent.advance_one_step(done)
-
-
-        if  (nb_episodes is not None and agent.completed_episodes >= nb_episodes) or \
-            (nb_total_steps is not None and agent.total_step > nb_total_steps):
-                break
-
-
-
-        
+        if agent.total_step > nb_total_steps:
+            break     
 
         #   ---------------------------------
         #   ---    time step ends here    ---
         #   ---------------------------------
         
 
-
+    agent.reset()
+    agent.clear_callback('on_step_end')
     return agent

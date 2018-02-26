@@ -75,12 +75,9 @@ class TestAgent(unittest.TestCase):
             env=env,
             agent=agent,
 
-            nb_episodes=None,
             nb_total_steps=11000,
-            expl_start=False,
             
-            plotter=None,
-            seed=self.seed)
+            plotter=None)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
         print('FINGERPRINT:', fp)
@@ -120,12 +117,9 @@ class TestAgent(unittest.TestCase):
             env=env,
             agent=agent,
 
-            nb_episodes=None,
             nb_total_steps=5000,
-            expl_start=False,
             
-            plotter=None,
-            seed=self.seed)
+            plotter=None)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
         print('FINGERPRINT:', fp)
@@ -166,12 +160,9 @@ class TestAgent(unittest.TestCase):
             env=env,
             agent=agent,
 
-            nb_episodes=None,
             nb_total_steps=25000,
-            expl_start=False,
             
-            plotter=None,
-            seed=self.seed)
+            plotter=None)
 
         fp, ws, st, act, rew, done = trained_agent.get_fingerprint()
         print('FINGERPRINT:', fp)

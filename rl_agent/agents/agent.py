@@ -122,8 +122,10 @@ class Agent:
         
 
         self._completed_episodes = 0
+
+        self._callback_on_step_end = None
         
-        self._reset()
+        self.reset()
 
         self._curr_total_step = 0
         self._curr_non_rand_step = 0
@@ -195,7 +197,7 @@ class Agent:
                 self._debug_cum_action, self._debug_cum_reward, \
                 self._debug_cum_done
 
-    def _reset(self):
+    def reset(self):
         self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
         self._force_random_action = self._expl_start
@@ -290,13 +292,42 @@ class Agent:
             q_val=q_val,
             series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
-    def advance_one_step(self, done):
+    def register_callback(self, which, function):
+
+        if which == 'on_step_end':
+            if self._callback_on_step_end is not None:
+                raise ValueError('callback {} already registered')
+            self._callback_on_step_end = function
+        else:
+            raise ValueError('unknown callback routine' + which)
+
+    def clear_callback(self, which):
+        if which == 'on_step_end':
+            self._callback_on_step_end = None
+        else:
+            raise ValueError('unknown callback routine' + which)
+
+
+    def next_step(self, done):
+
+        self.log(self.completed_episodes, self.step, self.total_step)
+
+        # -- roll into next time step --
+
         self._curr_step += 1
         self._curr_total_step += 1
 
+        if self._callback_on_step_end is not None:
+            self._callback_on_step_end(
+                agent=self,
+                reward=self._trajectory[-1].reward,
+                observation=self._trajectory[-1].observation,
+                done=self._trajectory[-1].done,
+                action=self._trajectory[-1].action)
+
         if done:
             self._completed_episodes += 1
-            self._reset()
+            self.reset()
 
         if self._curr_total_step > self.nb_rand_steps:
             self._curr_non_rand_step += 1
@@ -317,10 +348,13 @@ class Agent:
             #     + (self._epsilon_random_start - self._epsilon_random_target) \
             #     * math.exp(-self._epsilon_random_decay * self._curr_non_rand_step)
 
-    def pick_action(self, obs):
-        action = self._pick_action(obs)
-        self.append_action(action)
-        return action
+    def take_action(self, obs):
+        if self._trajectory[-1].done is True:
+            return None
+        else:
+            action = self._pick_action(obs)
+            self.append_action(action)
+            return action
 
     def _pick_action(self, obs):
         assert isinstance(obs, np.ndarray)

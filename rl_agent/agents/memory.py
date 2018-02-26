@@ -52,7 +52,7 @@ class Memory:
         assert St.shape == self._state_shape
         assert St.dtype == self._hist_St.dtype
         assert isinstance(At, int) or isinstance(At, np.int64)
-        assert isinstance(Rt_1, int)
+        assert isinstance(Rt_1, float)
         assert isinstance(St_1, np.ndarray)
         assert St_1.shape == self._state_shape
         assert St_1.dtype == self._hist_St_1.dtype
