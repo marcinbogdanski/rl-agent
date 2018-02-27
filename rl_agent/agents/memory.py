@@ -1,13 +1,26 @@
 import numpy as np
 import pdb
 
+# TODO: Add proper unittest
+
 class Memory:
+    """Circular buffer for DQN memory reply."""
+
     def __init__(self,
                  state_space,
                  action_space, 
                  max_len,
                  enable_pmr=False,
                  initial_pmr_error=1000.0):
+        """
+        Args:
+            state_space: gym.spaces.Box (tested) or Discrete (not tested)
+            action_space: gym.spaces.Box (not tested) or Discrete (tested)
+            max_len: maximum capacity
+            enable_pmr: if True, enable Marcins version of PMR
+            initial_pmr_error: error for new samples, should be order of
+                magnitude larger than max error during normal operation
+        """
         assert state_space.shape is not None
         assert state_space.dtype is not None
         assert action_space.shape is not None
@@ -39,6 +52,15 @@ class Memory:
         self._hist_error = np.zeros(error_shape, dtype=float)
 
     def append(self, St, At, Rt_1, St_1, done):
+        """Add one sample to memory, override oldest if max_len reached.
+
+        Args:
+            St - state
+            At - action
+            Rt_1 - reward
+            St_1 - next state
+            done - True if episode completed
+        """
         assert self._state_space.contains(St)
         assert self._action_space.contains(At)
         assert self._state_space.contains(St_1)
@@ -84,9 +106,20 @@ class Memory:
         print(self._hist_done)
 
     def length(self):
+        """Number of samples in memory, 0 <= length <= max_len"""
         return self._curr_len
 
     def get_batch(self, batch_len):
+        """Sample batch of data, with repetition
+
+        Args:
+            batch_len: nb of samples to pick
+
+        Returns:
+            states, actions, rewards, next_states, done, indices
+            Each returned element is np.ndarray with length == batch_len
+            Last element 'indices' can be passed back update_errors() method
+        """
         assert self._curr_len > 0
         assert batch_len > 0
 
@@ -111,6 +144,19 @@ class Memory:
         return states, actions, rewards_1, states_1, dones, indices
 
     def update_errors(self, indices, errors):
+        """For PMR, update error values for specified indices.
+
+        Example:
+            memory = Memory(...)
+            ... # add some data
+            st, act, rew, st_1, done, indices = memory.get_batch(64)
+            ... # train neural network
+            ... # calculate error values for each element in batch
+            ... # but do NOT modify memory in any way
+            memory.update_errors(indices, np.abs(errors))
+        """
+
+        Example:
         assert isinstance(indices, np.ndarray)
         assert indices.ndim == 1
         assert len(indices) > 0
