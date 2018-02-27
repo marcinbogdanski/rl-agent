@@ -507,7 +507,7 @@ class Agent:
             debug = self._curr_total_step == 110500
             errors = self.Q.update2(states, actions, rewards_1, states_1, dones)
 
-            self._memory.update_errors(indices, errors)
+            self._memory.update_errors(indices, np.abs(errors))
 
         else:
             if done:

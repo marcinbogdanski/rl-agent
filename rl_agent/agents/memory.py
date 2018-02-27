@@ -39,82 +39,22 @@ class Memory:
         self._hist_error = np.zeros(error_shape, dtype=float)
 
     def append(self, St, At, Rt_1, St_1, done):
-        assert isinstance(St, np.ndarray)
-        assert St.shape == self._state_space.shape
-        assert St.dtype == self._hist_St.dtype
         assert self._state_space.contains(St)
-        assert isinstance(At, int) or isinstance(At, np.int64)
-        assert isinstance(Rt_1, float)
-        assert isinstance(St_1, np.ndarray)
-        assert St_1.shape == self._state_space.shape
-        assert St_1.dtype == self._hist_St_1.dtype
-        assert isinstance(done, bool)
+        assert self._action_space.contains(At)
+        assert self._state_space.contains(St_1)
 
         self._hist_St[self._curr_insert_ptr] = St
         self._hist_At[self._curr_insert_ptr] = At
         self._hist_Rt_1[self._curr_insert_ptr] = Rt_1
         self._hist_St_1[self._curr_insert_ptr] = St_1
         self._hist_done[self._curr_insert_ptr] = done
+        
         # arbitrary high def error
         self._hist_error[self._curr_insert_ptr] = self._initial_pmr_error
 
-
-
-
-        # if self._curr_len == self._max_len:
-        #     np.savez('memory_3.npz',
-        #         states=self._hist_St,
-        #         actions=self._hist_At,
-        #         rewards_1=self._hist_Rt_1,
-        #         states_1=self._hist_St_1,
-        #         dones=self._hist_done,
-        #         )
-        #     pdb.set_trace()
-
-
-
-
-        # if self._curr_len == self._max_len:
-        #     import matplotlib.pyplot as plt
-        #     import log_viewer
-
-        #     fig = plt.figure()
-        #     ax = fig.add_subplot(111)
-
-        #     indices = np.where(self._hist_done[:,0])[0]
-            
-        #     x_arr = self._hist_St[:,0]
-        #     y_arr = self._hist_St[:,1]
-        #     act_arr = self._hist_At[:,0]
-        #     extent = (-1.2, 0.5, -0.07, 0.07)
-
-        #     # plot full history
-        #     # log_viewer.plot_trajectory_2d(
-        #     #     ax, x_arr, y_arr, act_arr, extent, 0, -0.5)
-            
-        #     for idx in indices:
-        #         log_viewer.plot_trajectory_2d(
-        #             ax,
-        #             x_arr[idx-100:idx+1],
-        #             y_arr[idx-100:idx+1],
-        #             act_arr[idx-100:idx+1], extent, 0, -0.5)
-
-        #     plt.pause(0.1)
-        #     pdb.set_trace()
-
-
-
-
-        # if done:
-        #     # done samples are very important
-        #     # so make sure we multiply them a bit
-        #     idx = np.random.randint(0, self._curr_len, size=5)
-        #     self._hist_St[idx] = St
-        #     self._hist_At[idx] = At
-        #     self._hist_Rt_1[idx] = Rt_1
-        #     self._hist_St_1[idx] = St_1
-        #     self._hist_done[idx] = done
-
+        #
+        #   increment insertion pointer, roll back if required 
+        #
         if self._curr_len < self._max_len:
             self._curr_len += 1
 
@@ -151,12 +91,9 @@ class Memory:
         assert batch_len > 0
 
         if not self._enable_pmr:
+            # np.random.randint much faster than np.random.sample (?)
             indices = np.random.randint(
                 low=0, high=self._curr_len, size=batch_len, dtype=int)
-
-            #indices_pre = self._random.sample(self._index_range, batch_len)
-            #indices_pre = np.array(indices_pre)
-            #indices = (indices_pre + self._curr_insert_ptr) % self._curr_len
 
         else:
             cdf = np.cumsum(self._hist_error+0.01)
@@ -165,38 +102,11 @@ class Memory:
             indices = np.searchsorted(cdf, values)
 
 
-
-
-        # states = self._hist_St[indices]
-        # actions = self._hist_At[indices]
-        # rewards_1 = self._hist_Rt_1[indices]
-        # states_1 = self._hist_St_1[indices]
-        # dones = self._hist_done[indices]
-
-        # pdb.set_trace()
-
         states = np.take(self._hist_St, indices, axis=0)
         actions = np.take(self._hist_At, indices, axis=0)
         rewards_1 = np.take(self._hist_Rt_1, indices, axis=0)
         states_1 = np.take(self._hist_St_1, indices, axis=0)
         dones = np.take(self._hist_done, indices, axis=0)
-
-        # batch = []
-        # for i, idx in enumerate(indices):
-        #     tup = (self._hist_St[idx],
-        #            self._hist_At[idx],
-        #            self._hist_Rt_1[idx],
-        #            self._hist_St_1[idx],
-        #            self._hist_done[idx])
-        #     batch.append(tup)
-
-        #     assert (tup[0] == states[i]).all()
-        #     assert (tup[1] == actions[i]).all()
-        #     assert (tup[2] == rewards_1[i]).all()
-        #     assert (tup[3] == states_1[i]).all()
-        #     assert (tup[4] == dones[i]).all()
-
-        # pdb.set_trace()
 
         return states, actions, rewards_1, states_1, dones, indices
 
@@ -207,8 +117,9 @@ class Memory:
         assert isinstance(errors, np.ndarray)
         assert errors.ndim == 1
         assert len(indices) == len(errors)
+        assert (errors > 0).all
 
-        self._hist_error[indices] = np.abs(errors)
+        self._hist_error[indices] = errors
 
 if __name__ == '__main__':
 
