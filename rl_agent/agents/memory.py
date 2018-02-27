@@ -155,8 +155,6 @@ class Memory:
             ... # but do NOT modify memory in any way
             memory.update_errors(indices, np.abs(errors))
         """
-
-        Example:
         assert isinstance(indices, np.ndarray)
         assert indices.ndim == 1
         assert len(indices) > 0
@@ -168,6 +166,7 @@ class Memory:
         self._hist_error[indices] = errors
 
 if __name__ == '__main__':
+    # this is old test-method
 
     mem = Memory(state_shape=(2, ),
                  act_shape=(1, ),
