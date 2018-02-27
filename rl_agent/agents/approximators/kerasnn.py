@@ -163,15 +163,13 @@ class KerasApproximator:
 
         assert isinstance(actions, np.ndarray)
         assert actions.dtype == int
-        assert actions.ndim == 2
-        assert actions.shape[0] >= 1
-        assert actions.shape[1] == 1
+        assert (actions.ndim == 2 and actions.shape[0] >= 1 and actions.shape[1] == 1) \
+                or (actions.ndim == 1 and actions.shape[0] >= 1)
 
         assert isinstance(rewards_n, np.ndarray)
         assert rewards_n.dtype == float
-        assert rewards_n.ndim == 2
+        assert rewards_n.ndim == 1
         assert rewards_n.shape[0] >= 1
-        assert rewards_n.shape[1] == 1
 
         assert isinstance(states_n, np.ndarray)
         assert states_n.dtype == float
@@ -181,9 +179,8 @@ class KerasApproximator:
 
         assert isinstance(dones, np.ndarray)
         assert dones.dtype == bool
-        assert dones.ndim == 2
+        assert dones.ndim == 1
         assert dones.shape[0] >= 1
-        assert dones.shape[1] == 1
 
 
 
@@ -227,10 +224,10 @@ class KerasApproximator:
         result_joint = self._model.predict(inputs_joint, batch_size=len(inputs_joint))
         targets, est_n = np.split(result_joint, 2)
         
-        q_n = np.max(est_n, axis=1, keepdims=True)
+        q_n = np.max(est_n, axis=1, keepdims=True).flatten()
         tt = rewards_n + (not_dones * self._discount * q_n)
-        errors = tt.flatten() - targets[np.arange(len(targets)), actions.flatten()]
-        targets[np.arange(len(targets)), actions.flatten()] = tt.flatten()
+        errors = tt - targets[np.arange(len(targets)), actions]
+        targets[np.arange(len(targets)), actions] = tt
         
         #self._model.train_on_batch(inputs, targets)
         self._model.fit(inputs, targets, batch_size=self._batch_size, epochs=1, verbose=False)

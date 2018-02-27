@@ -2,19 +2,21 @@ import numpy as np
 import pdb
 
 class Memory:
-    def __init__(self, state_shape, act_shape, 
-                 dtypes, max_len,
+    def __init__(self,
+                 state_space,
+                 action_space, 
+                 max_len,
                  enable_pmr=False,
                  initial_pmr_error=1000.0):
-        assert isinstance(state_shape, tuple)
-        assert isinstance(act_shape, tuple)
-        assert isinstance(dtypes, tuple)
-        assert len(dtypes) == 6
-        assert dtypes[-2] == bool
+        assert state_space.shape is not None
+        assert state_space.dtype is not None
+        assert action_space.shape is not None
+        assert action_space.shape is not None
         assert isinstance(max_len, int)
         assert max_len > 0
 
-        self._index_range = list(range(max_len))
+        self._state_space = state_space
+        self._action_space = action_space
 
         self._max_len = max_len
         self._enable_pmr = enable_pmr
@@ -22,33 +24,29 @@ class Memory:
         self._curr_insert_ptr = 0
         self._curr_len = 0
 
-        self._state_shape = state_shape
-        self._act_shape = act_shape
+        St_shape = [max_len] + list(state_space.shape)
+        At_shape = [max_len] + list(action_space.shape)
+        Rt_1_shape = [max_len]
+        St_1_shape = [max_len] + list(state_space.shape)
+        done_shape = [max_len]
+        error_shape = [max_len]
 
-        St_shape = [max_len] + list(state_shape)
-        At_shape = [max_len] + list(act_shape)
-        Rt_1_shape = [max_len] + [1]
-        St_1_shape = [max_len] + list(state_shape)
-        done_shape = [max_len] + [1]
-        error_shape = [max_len] + [1]
-        St_dtype, At_dtype, Rt_1_dtype, St_1_dtype, done_dtype, error_dtype \
-            = dtypes
-
-        self._hist_St = np.zeros(St_shape, dtype=St_dtype)
-        self._hist_At = np.zeros(At_shape, dtype=At_dtype)
-        self._hist_Rt_1 = np.zeros(Rt_1_shape, dtype=Rt_1_dtype)
-        self._hist_St_1 = np.zeros(St_1_shape, dtype=St_1_dtype)
-        self._hist_done = np.zeros(done_shape, dtype=done_dtype)
-        self._hist_error = np.zeros(error_shape, dtype=error_dtype)
+        self._hist_St = np.zeros(St_shape, dtype=state_space.dtype)
+        self._hist_At = np.zeros(At_shape, dtype=action_space.dtype)
+        self._hist_Rt_1 = np.zeros(Rt_1_shape, dtype=float)
+        self._hist_St_1 = np.zeros(St_1_shape, dtype=state_space.dtype)
+        self._hist_done = np.zeros(done_shape, dtype=bool)
+        self._hist_error = np.zeros(error_shape, dtype=float)
 
     def append(self, St, At, Rt_1, St_1, done):
         assert isinstance(St, np.ndarray)
-        assert St.shape == self._state_shape
+        assert St.shape == self._state_space.shape
         assert St.dtype == self._hist_St.dtype
+        assert self._state_space.contains(St)
         assert isinstance(At, int) or isinstance(At, np.int64)
         assert isinstance(Rt_1, float)
         assert isinstance(St_1, np.ndarray)
-        assert St_1.shape == self._state_shape
+        assert St_1.shape == self._state_space.shape
         assert St_1.dtype == self._hist_St_1.dtype
         assert isinstance(done, bool)
 
@@ -198,6 +196,8 @@ class Memory:
         #     assert (tup[3] == states_1[i]).all()
         #     assert (tup[4] == dones[i]).all()
 
+        # pdb.set_trace()
+
         return states, actions, rewards_1, states_1, dones, indices
 
     def update_errors(self, indices, errors):
@@ -208,7 +208,7 @@ class Memory:
         assert errors.ndim == 1
         assert len(indices) == len(errors)
 
-        self._hist_error[indices, 0] = np.abs(errors)
+        self._hist_error[indices] = np.abs(errors)
 
 if __name__ == '__main__':
 

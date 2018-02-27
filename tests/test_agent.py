@@ -59,7 +59,8 @@ class TestAgent(unittest.TestCase):
         env.seed(self.seed)
 
         agent = rl.Agent(
-            nb_actions=3,
+            state_space=env.observation_space,
+            action_space=env.action_space,
             discount=0.99,
             expl_start=False,
             nb_rand_steps=22000,
@@ -101,7 +102,8 @@ class TestAgent(unittest.TestCase):
         env.seed(self.seed)
 
         agent = rl.Agent(
-            nb_actions=3,
+            state_space=env.observation_space,
+            action_space=env.action_space,
             discount=0.99,
             expl_start=False,
             nb_rand_steps=0,
@@ -144,7 +146,8 @@ class TestAgent(unittest.TestCase):
         env.seed(self.seed)
 
         agent = rl.Agent(
-            nb_actions=3,
+            state_space=env.observation_space,
+            action_space=env.action_space,
             discount=0.99,
             expl_start=False,
             nb_rand_steps=0,

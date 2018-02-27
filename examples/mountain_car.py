@@ -49,13 +49,19 @@ def on_step_end(agent, reward, observation, done, action):
         print('espiode finished after iteration', agent.step)
 
 def test_single():
+
+    # seed spaces, if not called expicitly, defaults to seed==0
+    gym.spaces.seed(seed)
     
     env = gym.make('MountainCar-v0').env
     if seed is not None:
         env.seed(seed)
 
+    pdb.set_trace()
+
     agent = rl.Agent(
-        nb_actions=3,
+        state_space=env.observation_space,
+        action_space=env.action_space,
         discount=0.99,
         expl_start=False,
         nb_rand_steps=100000,

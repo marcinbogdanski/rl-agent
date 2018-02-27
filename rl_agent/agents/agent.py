@@ -30,6 +30,8 @@ def _rand_argmax(vector):
 class HistoryData:
     """One piece of agent trajectory"""
     def __init__(self, total_step, observation, reward, done):
+        assert isinstance(total_step, int)
+        assert total_step >= 0
         assert isinstance(observation, np.ndarray)
         self.total_step = total_step
         self.observation = observation
@@ -53,7 +55,8 @@ class EpisodeData:
 
 class Agent:
     def __init__(self,
-        nb_actions,
+        state_space,
+        action_space,
         discount,
         expl_start,
         nb_rand_steps,
@@ -69,8 +72,8 @@ class Agent:
         batch_size,
         logger=None):
 
-        self._nb_actions = nb_actions
-        self._action_space = list(range(nb_actions))
+        self._state_space = state_space
+        self._action_space = action_space
 
         # usually gamma in literature
         self._discount = discount
@@ -91,12 +94,14 @@ class Agent:
 
         log_approx = logger.approx if logger is not None else None
 
+        #ACT
+        nb_actions = 3
         if approximator == 'aggregate':
             self.Q = AggregateApproximator(
-                step_size, self._action_space, init_val=0, log=log_approx)
+                step_size, [0, 1, 2], init_val=0, log=log_approx)
         elif approximator == 'tiles':
             self.Q = TilesApproximator(
-                step_size, self._action_space, init_val=0, log=log_approx)
+                step_size, [0, 1, 2], init_val=0, log=log_approx)
         elif approximator == 'neural':
             self.Q = NeuralApproximator(
                 step_size, discount, batch_size, log=log_approx)
@@ -107,9 +112,8 @@ class Agent:
             raise ValueError('Unknown approximator')
 
         self._memory = memory.Memory(
-            state_shape=(2, ),
-            act_shape=(1, ),
-            dtypes=(float, int, float, float, bool, float),
+            state_space=state_space,
+            action_space=action_space,
             max_len=mem_size_max,
             enable_pmr=mem_enable_pmr,
             initial_pmr_error=1000.0)
@@ -275,7 +279,7 @@ class Agent:
 
 
             q_list = self.Q.estimate_all(states)
-            q_val = np.zeros([len(positions), len(velocities), self._nb_actions])
+            q_val = np.zeros([len(positions), len(velocities), self._nb_actions])  #ACT
             
             for si in range(len(states)):    
                 pi = si//pi_skip
@@ -387,7 +391,7 @@ class Agent:
         if self._trajectory[-1].done is True:
             return None
         else:
-            action = self._pick_action(obs)
+            action = self._pick_action(obs)  #ACT
             self.append_action(action)
             return action
 
@@ -397,39 +401,30 @@ class Agent:
 
         if self._curr_total_step < self.nb_rand_steps:
             self._this_step_rand_act = True
-            return np.random.choice(self._action_space)
+            return np.random.choice([0, 1, 2])
+            #return self._action_space.sample()
 
         if self._force_random_action:
             self._force_random_action = False
             self._this_step_rand_act = True
-            return np.random.choice(self._action_space)
+            return np.random.choice([0, 1, 2])
+            #return self._action_space.sample()
 
         if np.random.rand() < self._epsilon_random:
             # pick random action
             self._this_step_rand_act = True
-            res = np.random.choice(self._action_space)
+            res = np.random.choice([0, 1, 2])
+            #res = self._action_space.sample()
 
         else:
             self._this_step_rand_act = False
             # act greedy
-            
-            # max_Q = float('-inf')
-            # max_action = None
-            # possible_actions = []
-            # for action in self._action_space:
-            #     q = self.Q.estimate(obs, action)
-            #     if q > max_Q:
-            #         possible_actions.clear()
-            #         possible_actions.append(action)
-            #         max_Q = q
-            #     elif q == max_Q:
-            #         possible_actions.append(action)
-            # res = np.random.choice(possible_actions)
 
             obs = obs.reshape([1, 2])
             q_arr = self.Q.estimate_all(obs).flatten()
             index = _rand_argmax(q_arr)
-            res = self._action_space[index]
+            # res = self._action_space[index]  #ACT
+            res = index
 
         return res
 
@@ -462,9 +457,6 @@ class Agent:
         last_entry = self._trajectory[-1]
         if not last_entry.done:
             raise ValueError('Cant do offline on non-terminated episode')
-        # for act in self._action_space:
-        #     if self.Q[last_entry.observation, act] != 0:
-        #         raise ValueError('Action from last state has non-zero val.')
 
 
     def learn(self):
