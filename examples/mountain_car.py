@@ -75,7 +75,7 @@ def test_single():
         e_rand_decay=1/10000,
         mem_size_max=100000,
         mem_enable_pmr=False,
-        q_fun_approx=rl.KerasApproximator(0.99, q_model),
+        q_fun_approx=rl.KerasApproximator(q_model),
         step_size=0.00025,
         batch_size=1024,
 

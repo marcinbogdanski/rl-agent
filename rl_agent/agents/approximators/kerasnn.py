@@ -1,21 +1,32 @@
 import numpy as np
 import tensorflow as tf
 
+import gym
+
 import pdb
 
+# TODO: If state/action space is discretee, auto-one-hot-encode?
+# TODO: Add ability to configure normalization?
 # TODO: Documentation
 # TODO: Proper unittest
-# TODO: update normalisation, requires updating unittest
+# TODO: update normalisation code, requires updating unittest
 
 class KerasApproximator:
 
-    def __init__(self, discount, model):
-        self._discount = discount
+    def __init__(self, model):
         self._model = model
         self._state_space = None
         self._action_space = None
 
     def set_state_action_spaces(self, state_space, action_space):
+
+        # These should be relaxed in the future,
+        # possibly remove gym dependancy
+        if not isinstance(state_space, gym.spaces.Box):
+            raise ValueError('Only gym.spaces.Box state space supproted')
+        if not isinstance(action_space, gym.spaces.Discrete):
+            raise ValueError('Only gym.spaces.Discrete action space supported')
+
         first_layer = self._model.layers[0]
         nn_input_shape = first_layer.input_shape[1:]
         if state_space.shape != nn_input_shape:
@@ -78,7 +89,30 @@ class KerasApproximator:
         return self._model.predict(states, batch_size=len(states))
 
         
-    def update2(self, states, actions, rewards_n, states_n, dones):
+
+    def max_op(self, states):
+        assert self._state_space is not None
+        assert self._action_space is not None
+
+        assert isinstance(states, np.ndarray)
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
+
+        # TODO: use this form and update unittest
+        # inputs = (states - self._offsets) * self._scales
+        inputs = np.copy(states)
+        inputs -= self._offsets
+        inputs *= self._scales
+        outputs = self._model.predict(inputs, batch_size=len(inputs))
+
+        out_max = np.max(outputs, axis=1)
+
+        assert out_max.ndim == 1
+        assert len(out_max) == len(states)
+
+        return out_max
+
+    def train(self, states, actions, targets):
         assert self._state_space is not None
         assert self._action_space is not None
 
@@ -90,50 +124,27 @@ class KerasApproximator:
         assert actions.shape[1:] == self._action_space.shape
         # assert all(map(self._action_space.contains, actions))
 
-        assert isinstance(rewards_n, np.ndarray)
-        assert rewards_n.dtype == float
-        assert rewards_n.ndim == 1
+        assert isinstance(targets, np.ndarray)
+        assert targets.ndim == 1
 
-        assert isinstance(states_n, np.ndarray)
-        assert states_n.shape[1:] == self._state_space.shape
-        # assert all(map(self._state_space.contains, states_n))
-
-        assert isinstance(dones, np.ndarray)
-        assert dones.dtype == bool
-        assert dones.ndim == 1
-
-        assert len(states) == len(actions) \
-            == len(rewards_n) == len(states_n) == len(dones)
+        assert len(states) == len(actions) == len(targets)
 
 
-        #
-        #   This chunk could use some comments
-        #
-        
-        inputs = np.copy(states)
-        inputs_n = np.copy(states_n)
-        not_dones = np.logical_not(dones)
 
-        inputs -= self._offsets
-        inputs *= self._scales
-        inputs_n -= self._offsets
-        inputs_n *= self._scales
 
         # TODO: use this form and update unittest
         # inputs = (states - self._offsets) * self._scales
-        # inputs_n = (states_n - self._offsets) * self._scales
+        inputs = np.copy(states)
+        inputs -= self._offsets
+        inputs *= self._scales
+        all_targets = self._model.predict(inputs, batch_size=len(inputs))
         
-        # Join arrays for single predict() call (double speed improvement)
-        inputs_joint = np.concatenate((inputs, inputs_n))
-        result_joint = self._model.predict(inputs_joint, batch_size=len(inputs_joint))
-        targets, est_n = np.split(result_joint, 2)
         
-        q_n = np.max(est_n, axis=1, keepdims=True).flatten()
-        tt = rewards_n + (not_dones * self._discount * q_n)
-        errors = tt - targets[np.arange(len(targets)), actions]
-        targets[np.arange(len(targets)), actions] = tt
+
+        errors = targets - all_targets[np.arange(len(all_targets)), actions]
+        all_targets[np.arange(len(all_targets)), actions] = targets
         
-        #self._model.train_on_batch(inputs, targets)
-        self._model.fit(inputs, targets, batch_size=len(inputs), epochs=1, verbose=False)
-        
+        #self._model.train_on_batch(inputs, all_targets)
+        self._model.fit(inputs, all_targets, batch_size=len(inputs), epochs=1, verbose=False)
+
         return errors

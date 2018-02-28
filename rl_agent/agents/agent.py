@@ -498,14 +498,35 @@ class Agent:
             return
 
 
+        if isinstance(self.Q, KerasApproximator):
 
-        if isinstance(self.Q, NeuralApproximator) or \
-            isinstance(self.Q, KerasApproximator):
+
+            #
+            #   TD Update for Q-values
+            #
+
+            # Get batch
+            states, actions, rewards_1, states_1, dones, indices = \
+                self._memory.get_batch(self._batch_size)
+            
+            # Cals max_Q for next states
+            q_max = self.Q.max_op(states_1)
+
+            # True if state non-terminal
+            not_dones = np.logical_not(dones)
+
+            # Calc target Q values (reward_t + discout * max(Q_t_plus_1))
+            targets = rewards_1 + (not_dones * self._discount * q_max)
+
+            errors = self.Q.train(states, actions, targets)
+
+            self._memory.update_errors(indices, np.abs(errors))
+
+        elif isinstance(self.Q, NeuralApproximator):
 
             states, actions, rewards_1, states_1, dones, indices = \
                 self._memory.get_batch(self._batch_size)
 
-            debug = self._curr_total_step == 110500
             errors = self.Q.update2(states, actions, rewards_1, states_1, dones)
 
             self._memory.update_errors(indices, np.abs(errors))

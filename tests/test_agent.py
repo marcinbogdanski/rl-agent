@@ -76,9 +76,7 @@ class TestAgent(unittest.TestCase):
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_enable_pmr=False,
-            q_fun_approx=rl.KerasApproximator(
-                discount=0.99,
-                model=q_model),
+            q_fun_approx=rl.KerasApproximator(model=q_model),
             step_size=0.00025,
             batch_size=64,
 

@@ -1,4 +1,5 @@
 import numpy as np
+import gym
 import pdb
 
 # TODO: Add proper unittest
@@ -21,6 +22,14 @@ class Memory:
             initial_pmr_error: error for new samples, should be order of
                 magnitude larger than max error during normal operation
         """
+
+        # These should be relaxed in the future to support more spaces,
+        # possibly remove gym dependancy
+        if not isinstance(state_space, gym.spaces.Box):
+            raise ValueError('Only gym.spaces.Box state space supproted')
+        if not isinstance(action_space, gym.spaces.Discrete):
+            raise ValueError('Only gym.spaces.Discrete action space supported')
+
         assert state_space.shape is not None
         assert state_space.dtype is not None
         assert action_space.shape is not None
