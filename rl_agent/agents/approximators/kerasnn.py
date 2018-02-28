@@ -3,6 +3,10 @@ import tensorflow as tf
 
 import pdb
 
+# TODO: Documentation
+# TODO: Proper unittest
+# TODO: update normalisation, requires updating unittest
+
 class KerasApproximator:
 
     def __init__(self, discount, model):
@@ -10,10 +14,6 @@ class KerasApproximator:
         self._model = model
         self._state_space = None
         self._action_space = None
-
-        self._pos_offset = 0.3 # 0.35
-        self._pos_scale = 1 / 0.9  # 2 / 1.7  # -1.2 to 0.5 should be for NN
-        self._vel_scale = 1 / 0.07 # 2 / 0.14  # maps vel to -1..1
 
     def set_state_action_spaces(self, state_space, action_space):
         first_layer = self._model.layers[0]
@@ -28,6 +28,12 @@ class KerasApproximator:
 
         self._state_space = state_space
         self._action_space = action_space
+
+        # normalise inputs
+        low = state_space.low
+        high = state_space.high
+        self._offsets = low + (high - low) / 2
+        self._scales = 1 / ((high - low) / 2)
         
 
     def get_weights_fingerprint(self):
@@ -42,16 +48,15 @@ class KerasApproximator:
     def estimate(self, state, action):
         assert self._state_space is not None
         assert self._action_space is not None
-        assert self._state_space.contains(state)
-        assert self._action_space.contains(action)
+        assert isinstance(states, np.ndarray)
+        assert states.shape[1:] == self._state_space.shape
+        # assert [self._state_space.contains(x) for x in states]
         
-        pos, vel = state[0], state[1]
+        states = np.copy(states)
+        states -= self._offsets
+        states *= self._scales
 
-        pos += self._pos_offset
-        pos *= self._pos_scale
-        vel *= self._vel_scale
-
-        est = self._model.predict(np.array([[pos, vel]]))
+        est = self._model.predict(states)
 
 
         return est[0, action]
@@ -64,10 +69,11 @@ class KerasApproximator:
         # assert [self._state_space.contains(x) for x in states]
 
         states = np.copy(states)
+        states -= self._offsets
+        states *= self._scales
 
-        states[:,0] += self._pos_offset
-        states[:,0] *= self._pos_scale
-        states[:,1] *= self._vel_scale
+        # TODO: use this form and update unittest
+        # states_norm = (states - self._offsets) * self._scales
 
         return self._model.predict(states, batch_size=len(states))
 
@@ -104,16 +110,18 @@ class KerasApproximator:
         #   This chunk could use some comments
         #
         
-        inputs = np.array(states)
-        inputs_n = np.array(states_n)
+        inputs = np.copy(states)
+        inputs_n = np.copy(states_n)
         not_dones = np.logical_not(dones)
-        
-        inputs[:,0] += self._pos_offset
-        inputs[:,0] *= self._pos_scale
-        inputs[:,1] *= self._vel_scale
-        inputs_n[:,0] += self._pos_offset
-        inputs_n[:,0] *= self._pos_scale
-        inputs_n[:,1] *= self._vel_scale
+
+        inputs -= self._offsets
+        inputs *= self._scales
+        inputs_n -= self._offsets
+        inputs_n *= self._scales
+
+        # TODO: use this form and update unittest
+        # inputs = (states - self._offsets) * self._scales
+        # inputs_n = (states_n - self._offsets) * self._scales
         
         # Join arrays for single predict() call (double speed improvement)
         inputs_joint = np.concatenate((inputs, inputs_n))
