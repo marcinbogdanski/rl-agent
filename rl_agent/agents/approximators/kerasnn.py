@@ -5,47 +5,19 @@ import pdb
 
 class KerasApproximator:
 
-    def __init__(self, input_count, output_count, step_size, 
-            discount, batch_size, log=None):
-        self._input_count = input_count
-        self._output_count = output_count
-        self._step_size = step_size
+    def __init__(self, discount, model):
         self._discount = discount
-        self._batch_size = batch_size
-
-        # self._model = Sequential()
-        # # self._model.add(Dense(output_dim=128, activation='sigmoid', input_dim=2))
-        # # self._model.add(Dense(output_dim=3, activation='linear'))
-        # self._model.add(Dense(activation='sigmoid', input_dim=2, units=128))
-        # self._model.add(Dense(activation='linear', units=3))
-        # # self._model.compile(loss='mse', optimizer=RMSprop(lr=0.00025))
-        # self._model.compile(loss='mse', optimizer=sgd(lr=0.01))
-
-
-        # self._model = tf.keras.models.Sequential()
-        # self._model.add(tf.keras.layers.Dense(activation='sigmoid', input_dim=2, units=128))
-        # self._model.add(tf.keras.layers.Dense(activation='linear', units=3))
-        # self._model.compile(loss='mse', optimizer=tf.keras.optimizers.SGD(lr=0.01))
-
-        self._model = tf.keras.models.Sequential()
-        self._model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=input_count))
-        self._model.add(tf.keras.layers.Dense(units=256, activation='relu'))
-        self._model.add(tf.keras.layers.Dense(units=output_count, activation='linear'))
-        # self._model.compile(loss='mse', optimizer=tf.keras.optimizers.SGD(lr=0.001))
-        opt = tf.keras.optimizers.RMSprop(lr=step_size)
-        self._model.compile(loss='mse', optimizer=opt)
+        self._model = model
+        self._state_space = None
+        self._action_space = None
 
         self._pos_offset = 0.3 # 0.35
         self._pos_scale = 1 / 0.9  # 2 / 1.7  # -1.2 to 0.5 should be for NN
         self._vel_scale = 1 / 0.07 # 2 / 0.14  # maps vel to -1..1
 
-        if log is not None:
-            log.add_param('type', 'keras sequential')
-            log.add_param('input_count', input_count)
-            #log.add_param('hid_1_size', 128)
-            #log.add_param('hid_1_act', 'sigmoid')
-            log.add_param('output_count', output_count)
-            log.add_param('out_act', 'linear')
+    def set_state_action_spaces(self, state_space, action_space):
+        self._state_space = state_space
+        self._action_space = action_space
 
     def get_weights_fingerprint(self):
         weights_sum = 0
@@ -63,11 +35,12 @@ class KerasApproximator:
         pos, vel = state[0], state[1]
         assert -1.2 <= pos and pos <= 0.5
         assert -0.07 <= vel and vel <= 0.07
-        assert action in list(range(self._output_count))
 
         return pos, vel, action
 
     def estimate(self, state, action):
+        assert self._state_space is not None
+        assert self._action_space is not None
         pos, vel, action = self._test_input(state, action)
 
         pos += self._pos_offset
@@ -76,11 +49,12 @@ class KerasApproximator:
 
         est = self._model.predict(np.array([[pos, vel]]))
 
-        assert action in list(range(self._output_count))
 
         return est[0, action]
 
     def estimate_all(self, states):
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert isinstance(states, np.ndarray)
         assert states.ndim == 2
         assert len(states) > 0
@@ -101,6 +75,8 @@ class KerasApproximator:
         return est  # return 2d array
 
     def update(self, batch):
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert isinstance(batch, list)
         assert len(batch) > 0
         assert len(batch[0]) == 5
@@ -155,11 +131,12 @@ class KerasApproximator:
         self._model.train_on_batch(inputs, targets)
         
     def update2(self, states, actions, rewards_n, states_n, dones):
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert isinstance(states, np.ndarray)
         assert states.dtype == float
         assert states.ndim == 2
         assert states.shape[0] >= 1
-        assert states.shape[1] == self._input_count
 
         assert isinstance(actions, np.ndarray)
         assert actions.dtype == int
@@ -175,7 +152,6 @@ class KerasApproximator:
         assert states_n.dtype == float
         assert states_n.ndim == 2
         assert states_n.shape[0] >= 1
-        assert states_n.shape[1] == self._input_count
 
         assert isinstance(dones, np.ndarray)
         assert dones.dtype == bool
@@ -230,6 +206,6 @@ class KerasApproximator:
         targets[np.arange(len(targets)), actions] = tt
         
         #self._model.train_on_batch(inputs, targets)
-        self._model.fit(inputs, targets, batch_size=self._batch_size, epochs=1, verbose=False)
+        self._model.fit(inputs, targets, batch_size=len(inputs), epochs=1, verbose=False)
         
         return errors

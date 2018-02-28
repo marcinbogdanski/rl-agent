@@ -58,6 +58,13 @@ class TestAgent(unittest.TestCase):
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
+        q_model = tf.keras.models.Sequential()
+        q_model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=2))
+        q_model.add(tf.keras.layers.Dense(units=256, activation='relu'))
+        q_model.add(tf.keras.layers.Dense(units=3, activation='linear'))
+        q_model.compile(loss='mse', 
+            optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
+
         agent = rl.Agent(
             state_space=env.observation_space,
             action_space=env.action_space,
@@ -69,7 +76,9 @@ class TestAgent(unittest.TestCase):
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_enable_pmr=False,
-            approximator='keras',
+            q_fun_approx=rl.KerasApproximator(
+                discount=0.99,
+                model=q_model),
             step_size=0.00025,
             batch_size=64,
 
@@ -112,7 +121,7 @@ class TestAgent(unittest.TestCase):
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_enable_pmr=False,
-            approximator='tiles',
+            q_fun_approx='tiles',
             step_size=0.3,
             batch_size=64,
 
@@ -156,7 +165,7 @@ class TestAgent(unittest.TestCase):
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_enable_pmr=False,
-            approximator='aggregate',
+            q_fun_approx='aggregate',
             step_size=0.3,
             batch_size=64,
 

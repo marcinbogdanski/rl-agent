@@ -67,7 +67,7 @@ class Agent:
         mem_size_max,
         mem_enable_pmr,
 
-        approximator,
+        q_fun_approx,
         step_size,
         batch_size,
         logger=None):
@@ -94,22 +94,23 @@ class Agent:
 
         log_approx = logger.approx if logger is not None else None
 
-        #ACT
-        nb_actions = 3
-        if approximator == 'aggregate':
-            self.Q = AggregateApproximator(
-                step_size, [0, 1, 2], init_val=0, log=log_approx)
-        elif approximator == 'tiles':
-            self.Q = TilesApproximator(
-                step_size, [0, 1, 2], init_val=0, log=log_approx)
-        elif approximator == 'neural':
-            self.Q = NeuralApproximator(
-                step_size, discount, batch_size, log=log_approx)
-        elif approximator == 'keras':
-            self.Q = KerasApproximator( 2, nb_actions,
-                step_size, discount, batch_size, log=log_approx)
+        if isinstance(q_fun_approx, str):
+            #ACT
+            nb_actions = 3
+            if q_fun_approx == 'aggregate':
+                self.Q = AggregateApproximator(
+                    step_size, [0, 1, 2], init_val=0, log=log_approx)
+            elif q_fun_approx == 'tiles':
+                self.Q = TilesApproximator(
+                    step_size, [0, 1, 2], init_val=0, log=log_approx)
+            elif q_fun_approx == 'neural':
+                self.Q = NeuralApproximator(
+                    step_size, discount, batch_size, log=log_approx)
+            else:
+                raise ValueError('Unknown approximator')
         else:
-            raise ValueError('Unknown approximator')
+            self.Q = q_fun_approx
+            self.Q.set_state_action_spaces(state_space, action_space)
 
         self._memory = memory.Memory(
             state_space=state_space,

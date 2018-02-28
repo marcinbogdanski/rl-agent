@@ -57,7 +57,12 @@ def test_single():
     if seed is not None:
         env.seed(seed)
 
-    pdb.set_trace()
+    q_model = tf.keras.models.Sequential()
+    q_model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=2))
+    q_model.add(tf.keras.layers.Dense(units=256, activation='relu'))
+    q_model.add(tf.keras.layers.Dense(units=3, activation='linear'))
+    q_model.compile(loss='mse', 
+        optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
     agent = rl.Agent(
         state_space=env.observation_space,
@@ -70,7 +75,7 @@ def test_single():
         e_rand_decay=1/10000,
         mem_size_max=100000,
         mem_enable_pmr=False,
-        approximator='keras',
+        q_fun_approx=rl.KerasApproximator(0.99, q_model),
         step_size=0.00025,
         batch_size=1024,
 
