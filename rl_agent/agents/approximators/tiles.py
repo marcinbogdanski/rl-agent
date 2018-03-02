@@ -6,7 +6,7 @@ import pdb
 
 class TilesApproximator:
 
-    def __init__(self, step_size, action_space, init_val=0, log=None):
+    def __init__(self, step_size, action_space, init_val=0):
         self._num_of_tillings = 8
         self._step_size = step_size / self._num_of_tillings
 

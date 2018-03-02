@@ -99,7 +99,8 @@ class Agent:
             nb_actions = 3
             if q_fun_approx == 'aggregate':
                 self.Q = AggregateApproximator(
-                    step_size, [0, 1, 2], init_val=0, log=log_approx)
+                    step_size, bins=[64, 64], init_val=0)
+                self.Q.set_state_action_spaces(state_space, action_space)
             elif q_fun_approx == 'tiles':
                 self.Q = TilesApproximator(
                     step_size, [0, 1, 2], init_val=0, log=log_approx)
