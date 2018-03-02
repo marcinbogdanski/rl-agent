@@ -28,6 +28,9 @@ class AggregateApproximator:
         if not isinstance(action_space, gym.spaces.Discrete):
             raise ValueError('Only gym.spaces.Discrete action space supported')
 
+        if len(state_space.shape) != 1:
+            raise ValueError('state_space.shape must be a 1D vector')
+
         if state_space.shape != self._bin_sizes.shape:
             raise ValueError('Input shape does not match state_space shape')
 

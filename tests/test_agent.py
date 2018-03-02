@@ -119,7 +119,10 @@ class TestAgent(unittest.TestCase):
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_enable_pmr=False,
-            q_fun_approx='tiles',
+            q_fun_approx=rl.TilesApproximator(
+                step_size=0.3,
+                num_tillings=8,
+                init_val=0),
             step_size=0.3,
             batch_size=64,
 
@@ -134,12 +137,12 @@ class TestAgent(unittest.TestCase):
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
 
-        self.assertEqual(fp, -3695.0214844234456)
-        self.assertEqual(ws, -1310.189102073466)
-        self.assertEqual(st, -2456.8323823499795)
-        self.assertEqual(act, 5068)
-        self.assertEqual(rew, -4998.0)
-        self.assertEqual(done, 2)
+        self.assertEqual(fp, -3765.633914735571)
+        self.assertEqual(ws, -1302.5853134829933)
+        self.assertEqual(st, -2510.048601252578)
+        self.assertEqual(act, 5045)
+        self.assertEqual(rew, -4999.0)
+        self.assertEqual(done, 1)
 
 
     def test_30_run_aggregate_1(self):

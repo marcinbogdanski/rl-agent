@@ -94,18 +94,16 @@ class Agent:
 
         log_approx = logger.approx if logger is not None else None
 
-        if isinstance(q_fun_approx, str):
-            #ACT
-            nb_actions = 3
-            if q_fun_approx == 'tiles':
-                self.Q = TilesApproximator(
-                    step_size, [0, 1, 2], init_val=0)
-            else:
-                raise ValueError('Unknown approximator')
-        else:
-            self.Q = q_fun_approx
+        #
+        #   Initialise Q-function approximator
+        #
+        self.Q = q_fun_approx
+        if self.Q is not None:
             self.Q.set_state_action_spaces(state_space, action_space)
 
+        #
+        #   Initialise Memory
+        #
         self._memory = memory.Memory(
             state_space=state_space,
             action_space=action_space,
