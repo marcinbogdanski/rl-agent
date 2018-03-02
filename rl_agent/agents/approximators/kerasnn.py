@@ -57,11 +57,12 @@ class KerasApproximator:
 
 
     def estimate(self, state, action):
+        assert False
         assert self._state_space is not None
         assert self._action_space is not None
         assert isinstance(states, np.ndarray)
         assert states.shape[1:] == self._state_space.shape
-        # assert [self._state_space.contains(x) for x in states]
+        # assert all(map(self._state_space.contains, states))
         
         states = np.copy(states)
         states -= self._offsets
@@ -77,7 +78,7 @@ class KerasApproximator:
         assert self._action_space is not None
         assert isinstance(states, np.ndarray)
         assert states.shape[1:] == self._state_space.shape
-        # assert [self._state_space.contains(x) for x in states]
+        # assert all(map(self._state_space.contains, states))
 
         states = np.copy(states)
         states -= self._offsets

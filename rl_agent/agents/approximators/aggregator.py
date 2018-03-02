@@ -5,14 +5,14 @@ import gym
 import pdb
 
 
-
 class AggregateApproximator:
 
     def __init__(self, step_size, bins, init_val):
         assert isinstance(bins, list) or isinstance(bins, tuple)
 
         self._step_size = step_size
-        self._bins = np.array(bins)
+        self._nb_dims = len(bins)
+        self._bin_sizes = np.array(bins)
         self._init_val = init_val
         
         # actuall initialisation happens in set_state_action_spaces()
@@ -27,7 +27,7 @@ class AggregateApproximator:
         if not isinstance(action_space, gym.spaces.Discrete):
             raise ValueError('Only gym.spaces.Discrete action space supported')
 
-        if state_space.shape != self._bins.shape:
+        if state_space.shape != self._bin_sizes.shape:
             raise ValueError('Input shape does not match state_space shape')
 
         
@@ -35,61 +35,53 @@ class AggregateApproximator:
         self._state_space = state_space
         self._action_space = action_space
 
-        
-
-        assert len(self._bins) == 2
         eps = 1e-5
 
+        self._bin_borders = []  # array of bin borders for each dimension
+        for i in range(self._nb_dims):
+            bin_size = self._bin_sizes[i]
+            low = self._state_space.low[i]
+            high = self._state_space.high[i]
+            borders = np.linspace(low, high+eps, bin_size+1)
+            self._bin_borders.append(borders)
 
-        pos_bin_nb = self._bins[0]
-        self._pos_bins = np.linspace(-1.2, 0.5+eps, pos_bin_nb+1)
+        
+        assert len(self._bin_sizes) == 2
 
-        vel_bin_nb = self._bins[1]
-        self._vel_bins = np.linspace(-0.07, 0.07+eps, vel_bin_nb+1)
+        pos_bin_nb = self._bin_sizes[0]
+        vel_bin_nb = self._bin_sizes[1]
+        
+        self._bin_borders[0] = np.linspace(-1.2, 0.5+eps, pos_bin_nb+1)
 
         nb_actions = action_space.n
-        self._states = np.zeros([pos_bin_nb, vel_bin_nb, nb_actions]) + self._init_val
-
-
-
-
+        self._states = \
+            np.zeros([pos_bin_nb, vel_bin_nb, nb_actions]) + self._init_val
 
 
     def get_weights_fingerprint(self):
         return np.sum(self._states)
 
-    def _to_idx(self, state, action):
+    def _to_idx(self, state):
+        indices = []  # array of indices, one int per dimension
+        for i in range(self._nb_dims):
+            idx = np.digitize(state[i], self._bin_borders[i]) - 1
+            indices.append(idx)
+        return indices
+
+    def estimate(self, state, action):
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert self._state_space.contains(state)
         assert self._action_space.contains(action)
 
-        pos, vel = state[0], state[1]
-        act_idx = action
+        indices = self._to_idx(state)
 
-        pos_idx = np.digitize(pos, self._pos_bins) - 1
-        if vel == 0.07:
-            vel_idx = self._vel_bin_nb-1
-        else:
-            vel_idx = np.digitize(vel, self._vel_bins) - 1
-
-        assert 0 <= pos_idx and pos_idx <= len(self._pos_bins)
-        assert 0 <= vel_idx and vel_idx <= len(self._vel_bins)
-
-        return pos_idx, vel_idx, act_idx
-
-    def estimate(self, state, action):
-        pos_idx, vel_idx, act_idx = self._to_idx(state, action)
-        return self._states[pos_idx, vel_idx, act_idx]
+        return self._states[(*indices, action)]
     
     def estimate_all(self, states):
-        assert isinstance(states, np.ndarray)
-        assert states.ndim == 2
-        assert len(states) > 0
-        assert states.shape[1] == 2   # pos, vel
-        assert states.dtype == np.float32 or states.dtype == np.float64
-        assert np.min(states, axis=0)[0] >= -1.2  # pos
-        assert np.max(states, axis=0)[0] <= 0.5  # pos
-        assert np.min(states, axis=0)[1] >= -0.07  # vel
-        assert np.max(states, axis=0)[1] <= 0.07  # vel
+        assert self._state_space is not None
+        assert self._action_space is not None
+        assert all(map(self._state_space.contains, states))
 
         result = np.zeros( [len(states), self._action_space.n], dtype=float)
         for si in range(len(states)):
@@ -99,44 +91,47 @@ class AggregateApproximator:
 
         return result
 
-    def update(self, state, action, target):
-        pos_idx, vel_idx, act_idx = self._to_idx(state, action)
+    def train(self, states, actions, targets):
 
-        pos = state[0]
-        assert pos < 0.5  # this should never be called on terminal state
+        #
+        #   If scalars were passed
+        #
+        if states.ndim == 1:
+            assert np.isscalar(actions)
+            assert np.isscalar(targets)
+            self._update(states, actions, targets)
+            return
+
+        #
+        #   If arrays were passed
+        #
+        assert self._state_space is not None
+        assert self._action_space is not None
         
+        assert isinstance(states, np.ndarray) or isinstance(states, list)
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
+
+        assert isinstance(actions, np.ndarray) or isinstance(states, list)
+        assert actions.shape[1:] == self._action_space.shape
+        # assert all(map(self._action_space.contains, actions))
+
+        assert isinstance(targets, np.ndarray) or isinstance(states, list)
+        assert targets.ndim == 1
+
+        assert len(states) == len(actions) == len(targets)
+
+        for i in range(len(states)):
+            self._update(states[i], actions[i], targets[i])
+
+
+    def _update(self, state, action, target):
+
         est = self.estimate(state, action)
+
+        pos_idx, vel_idx = self._to_idx(state)
+        act_idx = action
         
         self._states[pos_idx, vel_idx, act_idx] += \
             self._step_size * (target - est)
 
-    def update2(self, states, actions, rewards_n, states_n, dones, timing_dict):
-
-        # pdb.set_trace()
-        # print('hop')
-
-        est_arr = self.estimate_all(states)
-        est_arr_1 = self.estimate_all(states_n)
-
-        errors = np.zeros([len(states)])
-
-        for i in range(len(states)):
-            St = states[i]
-            At = actions[i, 0]
-            Rt_1 = rewards_n[i, 0]
-            St_1 = states_n[i]
-            done = dones[i, 0]
-
-            est = est_arr_1[i]
-            At_1 = _rand_argmax(est)
-
-            if done:
-                Tt = Rt_1
-            else:
-                Tt = Rt_1 + 0.99 * self.estimate(St_1, At_1)
-
-            errors[i] = Tt - est_arr[i, At]
-
-            self.update(St, At, Tt)
-
-        return errors

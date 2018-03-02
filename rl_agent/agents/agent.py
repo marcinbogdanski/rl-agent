@@ -97,16 +97,9 @@ class Agent:
         if isinstance(q_fun_approx, str):
             #ACT
             nb_actions = 3
-            if q_fun_approx == 'aggregate':
-                self.Q = AggregateApproximator(
-                    step_size, bins=[64, 64], init_val=0)
-                self.Q.set_state_action_spaces(state_space, action_space)
-            elif q_fun_approx == 'tiles':
+            if q_fun_approx == 'tiles':
                 self.Q = TilesApproximator(
-                    step_size, [0, 1, 2], init_val=0, log=log_approx)
-            elif q_fun_approx == 'neural':
-                self.Q = NeuralApproximator(
-                    step_size, discount, batch_size, log=log_approx)
+                    step_size, [0, 1, 2], init_val=0)
             else:
                 raise ValueError('Unknown approximator')
         else:
@@ -501,16 +494,15 @@ class Agent:
 
         if isinstance(self.Q, KerasApproximator):
 
-
             #
-            #   TD Update for Q-values
+            #   Q-Learning
             #
 
             # Get batch
             states, actions, rewards_1, states_1, dones, indices = \
                 self._memory.get_batch(self._batch_size)
             
-            # Cals max_Q for next states
+            # Calculates max_Q for next states
             q_max = self.Q.max_op(states_1)
 
             # True if state non-terminal
@@ -524,15 +516,13 @@ class Agent:
             self._memory.update_errors(indices, np.abs(errors))
 
         elif isinstance(self.Q, NeuralApproximator):
-
-            states, actions, rewards_1, states_1, dones, indices = \
-                self._memory.get_batch(self._batch_size)
-
-            errors = self.Q.update2(states, actions, rewards_1, states_1, dones)
-
-            self._memory.update_errors(indices, np.abs(errors))
+            raise NotImplemented()
 
         else:
+
+            #
+            #   SARSA
+            #
             if done:
                 Tt = Rt_1
             else:
@@ -541,6 +531,6 @@ class Agent:
                     At_1 = self._pick_action(St)
                 Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
-            self.Q.update(St, At, Tt)
+            self.Q.train(St, At, Tt)
             
 

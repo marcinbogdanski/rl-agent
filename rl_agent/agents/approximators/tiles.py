@@ -67,7 +67,7 @@ class TilesApproximator:
         return result
 
 
-    def update(self, state, action, target):
+    def train(self, state, action, target):
         pos, vel, action = self._test_input(state, action)
         assert pos < 0.5  # this should never be called on terminal state
 
