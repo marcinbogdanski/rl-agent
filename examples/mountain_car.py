@@ -74,10 +74,9 @@ def test_single():
         e_rand_target=0.1,
         e_rand_decay=1/10000,
         mem_size_max=100000,
+        mem_batch_size=1024,
         mem_enable_pmr=False,
         q_fun_approx=rl.KerasApproximator(q_model),
-        step_size=0.00025,
-        batch_size=1024,
 
         logger=logger)
 

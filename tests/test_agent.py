@@ -75,10 +75,9 @@ class TestAgent(unittest.TestCase):
             e_rand_target=0.1,
             e_rand_decay=1/10000,
             mem_size_max=10000,
+            mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.KerasApproximator(model=q_model),
-            step_size=0.00025,
-            batch_size=64,
 
             logger=None)
 
@@ -118,13 +117,12 @@ class TestAgent(unittest.TestCase):
             e_rand_target=0.1,
             e_rand_decay=1/10000,
             mem_size_max=10000,
+            mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=8,
                 init_val=0),
-            step_size=0.3,
-            batch_size=64,
 
             logger=None)
 
@@ -165,13 +163,12 @@ class TestAgent(unittest.TestCase):
             e_rand_target=0.1,
             e_rand_decay=1/10000,
             mem_size_max=10000,
+            mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.AggregateApproximator(
                 step_size=0.3,
                 bins=[64, 64],
                 init_val=0),
-            step_size=0.3,
-            batch_size=64,
 
             logger=None)
 

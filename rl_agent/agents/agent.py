@@ -65,11 +65,10 @@ class Agent:
         e_rand_decay,
 
         mem_size_max,
+        mem_batch_size,
         mem_enable_pmr,
 
         q_fun_approx,
-        step_size,
-        batch_size,
         logger=None):
 
         self._state_space = state_space
@@ -111,8 +110,7 @@ class Agent:
             enable_pmr=mem_enable_pmr,
             initial_pmr_error=1000.0)
 
-        self._step_size = step_size  # usually noted as alpha in literature
-        self._batch_size = batch_size
+        self._mem_batch_size = mem_batch_size
 
         
 
@@ -141,9 +139,6 @@ class Agent:
             self.logger.agent.add_param('e_rand_target', self._epsilon_random_target)
             self.logger.agent.add_param('e_rand_decay', self._epsilon_random_decay)
 
-            self.logger.agent.add_param('step_size', self._step_size)
-            self.logger.agent.add_param('batch_size', self._batch_size)
-
             self.logger.agent.add_data_item('e_rand')
             self.logger.agent.add_data_item('rand_act')
 
@@ -162,6 +157,7 @@ class Agent:
 
         if self.logger is not None:
             self.logger.memory.add_param('max_size', mem_size_max)
+            self.logger.agent.add_param('batch_size', self._mem_batch_size)
             self.logger.memory.add_param('enable_pmr', mem_enable_pmr)
             self.logger.memory.add_data_item('curr_size')
             self.logger.memory.add_data_item('hist_St')
@@ -498,7 +494,7 @@ class Agent:
 
             # Get batch
             states, actions, rewards_1, states_1, dones, indices = \
-                self._memory.get_batch(self._batch_size)
+                self._memory.get_batch(self._mem_batch_size)
             
             # Calculates max_Q for next states
             q_max = self.Q.max_op(states_1)
