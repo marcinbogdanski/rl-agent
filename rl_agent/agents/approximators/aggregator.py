@@ -4,6 +4,7 @@ import gym
 
 import pdb
 
+# TODO: documentaiton & comments
 
 class AggregateApproximator:
 
@@ -51,7 +52,8 @@ class AggregateApproximator:
         pos_bin_nb = self._bin_sizes[0]
         vel_bin_nb = self._bin_sizes[1]
         
-        self._bin_borders[0] = np.linspace(-1.2, 0.5+eps, pos_bin_nb+1)
+        # TODO: remove and update unittest
+        # self._bin_borders[0] = np.linspace(-1.2, 0.5+eps, pos_bin_nb+1)
 
         nb_actions = action_space.n
         self._states = \

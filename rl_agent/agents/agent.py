@@ -274,7 +274,7 @@ class Agent:
 
 
             q_list = self.Q.estimate_all(states)
-            q_val = np.zeros([len(positions), len(velocities), self._nb_actions])  #ACT
+            q_val = np.zeros([len(positions), len(velocities), self._action_space.n])  #ACT
             
             for si in range(len(states)):    
                 pi = si//pi_skip
