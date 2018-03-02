@@ -35,7 +35,6 @@ class AggregateApproximator:
             raise ValueError('Input shape does not match state_space shape')
 
         
-        
         self._state_space = state_space
         self._action_space = action_space
 
@@ -49,18 +48,9 @@ class AggregateApproximator:
             borders = np.linspace(low, high+eps, bin_size+1)
             self._bin_borders.append(borders)
 
-        
-        assert len(self._bin_sizes) == 2
-
-        pos_bin_nb = self._bin_sizes[0]
-        vel_bin_nb = self._bin_sizes[1]
-        
-        # TODO: remove and update unittest
-        # self._bin_borders[0] = np.linspace(-1.2, 0.5+eps, pos_bin_nb+1)
-
         nb_actions = action_space.n
         self._states = \
-            np.zeros([pos_bin_nb, vel_bin_nb, nb_actions]) + self._init_val
+            np.zeros([*self._bin_sizes, nb_actions]) + self._init_val
 
 
     def get_weights_fingerprint(self):
@@ -99,10 +89,11 @@ class AggregateApproximator:
     def train(self, states, actions, targets):
 
         #
-        #   If scalars were passed
+        #   If single state/action/target was passed
         #
         if states.ndim == 1:
-            assert np.isscalar(actions)
+            assert self._state_space.contains(states)
+            assert self._action_space.contains(actions)
             assert np.isscalar(targets)
             self._update(states, actions, targets)
             return
@@ -134,9 +125,9 @@ class AggregateApproximator:
 
         est = self.estimate(state, action)
 
-        pos_idx, vel_idx = self._to_idx(state)
+        indices = self._to_idx(state)
         act_idx = action
         
-        self._states[pos_idx, vel_idx, act_idx] += \
+        self._states[(*indices, act_idx)] += \
             self._step_size * (target - est)
 

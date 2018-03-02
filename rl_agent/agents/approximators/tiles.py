@@ -59,59 +59,32 @@ class TilesApproximator:
         self._hashtable = tile_coding.IHT(mem_req)
         self._weights = np.zeros(mem_req) + self._init_val / self._num_tillings
 
-        # print(mem_req)
-        # pdb.set_trace()
-
-
-        # while True:
-        #     pos = np.random.uniform(-1.2, 0.6)
-        #     vel = np.random.uniform(-0.07, 0.07)
-        #     action = np.random.randint(0, 3)
-
-        #     active_tiles = tile_coding.tiles(
-        #         self._hashtable, self._num_tillings,
-        #         [self._scales[0] * pos, self._scales[1] * vel], [action])
-
-        #     print(len(self._hashtable.dictionary))
-
 
     def get_weights_fingerprint(self):
         return np.sum(self._weights)
 
-    def _test_input(self, state, action):
-        assert isinstance(state, np.ndarray)
-        assert isinstance(state[0], float)
-        assert isinstance(state[1], float)
-        assert isinstance(action, int) or isinstance(action, np.int64)
-
-        pos, vel = state[0], state[1]
-
-        assert -1.2 <= pos and pos <= 0.5
-        assert -0.07 <= vel and vel <= 0.07
-
-        assert action in [0, 1, 2]
-
-        return pos, vel, action
 
     def estimate(self, state, action):
-        pos, vel, action = self._test_input(state, action)
+        assert self._state_space is not None
+        assert self._action_space is not None
+        assert self._state_space.contains(state)
+        assert self._action_space.contains(action)
+
+        scaled_state = np.multiply(self._scales, state)
 
         active_tiles = tile_coding.tiles(
             self._hashtable, self._num_tillings,
-            [self._scales[0] * pos, self._scales[1] * vel], [action])
+            scaled_state, [action])
 
         return np.sum(self._weights[active_tiles])
 
+
     def estimate_all(self, states):
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert isinstance(states, np.ndarray)
-        assert states.ndim == 2
-        assert len(states) > 0
-        assert states.shape[1] == 2   # pos, vel
-        assert states.dtype == np.float32 or states.dtype == np.float64
-        assert np.min(states, axis=0)[0] >= -1.2  # pos
-        assert np.max(states, axis=0)[0] <= 0.5  # pos
-        assert np.min(states, axis=0)[1] >= -0.07  # vel
-        assert np.max(states, axis=0)[1] <= 0.07  # vel
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
 
         result = np.zeros( [len(states), self._action_space.n], dtype=float)
         for si in range(len(states)):
@@ -122,49 +95,50 @@ class TilesApproximator:
         return result
 
 
-    def train(self, state, action, target):
-        pos, vel, action = self._test_input(state, action)
-        assert pos < 0.5  # this should never be called on terminal state
+    def train(self, states, actions, targets):
+
+        #
+        #   If single state/action/target was passed
+        #
+        if states.ndim == 1:
+            assert self._state_space.contains(states)
+            assert self._action_space.contains(actions)
+            assert np.isscalar(targets)
+            self._update(states, actions, targets)
+            return
+
+        #
+        #   If arrays were passed
+        #
+        assert self._state_space is not None
+        assert self._action_space is not None
+        
+        assert isinstance(states, np.ndarray) or isinstance(states, list)
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
+
+        assert isinstance(actions, np.ndarray) or isinstance(states, list)
+        assert actions.shape[1:] == self._action_space.shape
+        # assert all(map(self._action_space.contains, actions))
+
+        assert isinstance(targets, np.ndarray) or isinstance(states, list)
+        assert targets.ndim == 1
+
+        assert len(states) == len(actions) == len(targets)
+
+        for i in range(len(states)):
+            self._update(states[i], actions[i], targets[i])
+
+    def _update(self, state, action, target):
+
+        scaled_state = np.multiply(self._scales, state)
 
         active_tiles = tile_coding.tiles(
             self._hashtable, self._num_tillings,
-            [self._scales[0] * pos, self._scales[1] * vel],
-            [action])
+            scaled_state, [action])
 
         est = np.sum(self._weights[active_tiles])
 
         delta = self._step_size * (target - est)
 
-        for tile in active_tiles:
-            self._weights[tile] += delta
-
-    def update2(self, states, actions, rewards_n, states_n, dones, timing_dict):
-
-        # pdb.set_trace()
-        # print('hop')
-
-        est_arr = self.estimate_all(states)
-        est_arr_1 = self.estimate_all(states_n)
-
-        errors = np.zeros([len(states)])
-
-        for i in range(len(states)):
-            St = states[i]
-            At = actions[i, 0]
-            Rt_1 = rewards_n[i, 0]
-            St_1 = states_n[i]
-            done = dones[i, 0]
-
-            est = est_arr_1[i]
-            At_1 = _rand_argmax(est)
-
-            if done:
-                Tt = Rt_1
-            else:
-                Tt = Rt_1 + 0.99 * self.estimate(St_1, At_1)
-
-            errors[i] = Tt - est_arr[i, At]
-
-            self.update(St, At, Tt)
-
-        return errors
+        self._weights[active_tiles] += delta
