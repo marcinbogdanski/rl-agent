@@ -14,6 +14,10 @@ class Plotter():
         self.plot_every = plot_every
         self.disp_len = disp_len
 
+        self.extent = None
+        self.h_line = None
+        self.v_line = None
+
         self.figures = figures
 
         self.ax_qmax_wf = ax_qmax_wf
@@ -25,6 +29,11 @@ class Plotter():
         self.ax_q_series = ax_q_series
         self.ax_reward = ax_reward
 
+    def set_state_action_spaces(self, low, high, h_line, v_line):
+        self.extent = (low[0], high[0], low[1], high[1])
+        self.h_line = h_line
+        self.v_line = v_line
+
         
     def conditional_plot(self, logger, current_total_step):
         if current_total_step % self.plot_every == 0 and self.realtime_plotting:
@@ -34,8 +43,6 @@ class Plotter():
             return False
 
     def plot(self, logger, current_total_step):
-
-        extent = (-1.2, 0.5, -0.07, 0.07)
 
         # print('---')
         # print(current_total_step % step_span == 0)
@@ -49,19 +56,19 @@ class Plotter():
                 self.ax_qmax_wf.clear()
                 self.ax_qmax_wf.set_title('q_max: ' + str(q_val_step))
                 plot_q_val_wireframe(self.ax_qmax_wf, q_max,
-                    extent, ('pos', 'vel', 'q_max'), color='gray', alpha=1.0)
+                    self.extent, ('pos', 'vel', 'q_max'), color='gray', alpha=1.0)
 
             if self.ax_qmax_im is not None:
                 self.ax_qmax_im.clear()
                 plot_q_val_imshow(self.ax_qmax_im, q_max,
-                    extent, h_line=0.0, v_line=-0.5)
+                    self.extent, h_line=self.h_line, v_line=self.v_line)
                 self.ax_qmax_im.set_yticklabels([])
                 self.ax_qmax_im.set_xticklabels([])
             
             if self.ax_policy is not None:
                 self.ax_policy.clear()
                 plot_policy(self.ax_policy, q_val,
-                    extent, h_line=0.0, v_line=-0.5)
+                    self.extent, h_line=self.h_line, v_line=self.v_line)
 
 
         if self.ax_trajectory is not None:
@@ -79,7 +86,7 @@ class Plotter():
 
             self.ax_trajectory.clear()
             plot_trajectory_2d(self.ax_trajectory, 
-                St_pos, St_vel, At, extent, h_line=0.0, v_line=-0.5)
+                St_pos, St_vel, At, self.extent, h_line=self.h_line, v_line=self.v_line)
 
 
         if self.ax_memory is not None:

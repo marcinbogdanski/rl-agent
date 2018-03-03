@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+from .base_approx import BaseApproximator
 import gym
 
 import pdb
@@ -11,9 +11,10 @@ import pdb
 # TODO: Proper unittest
 # TODO: update normalisation code, requires updating unittest
 
-class KerasApproximator:
+class KerasApproximator(BaseApproximator):
 
     def __init__(self, model):
+        super().__init__()
         self._model = model
         self._state_space = None
         self._action_space = None

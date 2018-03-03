@@ -82,7 +82,7 @@ class Program():
             action_translator=None,
             reward_translator=None)
 
-        # self.env = EnvTranslator(
+        # self.env = rl.util.EnvTranslator(
         #     env=gym.make('Pendulum-v0').env,
         #     observation_space = gym.spaces.Box(
         #         low=np.array([-np.pi, -1.0]), 
@@ -118,7 +118,13 @@ class Program():
                 step_size=0.3,
                 num_tillings=8,
                 init_val=0)
+            # q_fun_approx=rl.AggregateApproximator(
+            #     step_size=0.3,
+            #     bins=[64, 64],
+            #     init_val=0)
             )
+
+        self.plotter.set_state_action_spaces(self.env.observation_space.low, self.env.observation_space.high, h_line=0.0, v_line=-0.5)
 
         agent.log_episodes = self.logger.epsumm
         agent.log_agent = None

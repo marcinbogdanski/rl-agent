@@ -1,15 +1,16 @@
 import numpy as np
-
+from .base_approx import BaseApproximator
 import gym
 
 import pdb
 
 # TODO: documentaiton & comments
 
-class AggregateApproximator:
+class AggregateApproximator(BaseApproximator):
 
     def __init__(self, step_size, bins, init_val):
         assert isinstance(bins, list) or isinstance(bins, tuple)
+        super().__init__()
 
         self._step_size = step_size
         self._nb_dims = len(bins)

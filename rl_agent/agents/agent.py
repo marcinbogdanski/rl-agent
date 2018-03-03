@@ -231,8 +231,7 @@ class Agent:
                 done=self._trajectory[-1].done)
 
         self.memory.log(episode, step, total_step)
-        if isinstance(self.Q, TilesApproximator):
-            self.Q.log(episode, step, total_step)
+        self.Q.log(episode, step, total_step)
 
 
     def register_callback(self, which, function):
