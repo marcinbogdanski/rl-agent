@@ -17,15 +17,6 @@ def _rand_argmax(vector):
     return np.random.choice(indices)
 
 
-
-
-
-
-
-
-
-
-
 class HistoryData:
     """One piece of agent trajectory"""
     def __init__(self, total_step, observation, reward, done):
@@ -41,6 +32,7 @@ class HistoryData:
     def __str__(self):
         return 'obs={0}, rew={1} done={2}   act={3}'.format(
             self.observation, self.reward, self.done, self.action)
+
 
 class EpisodeData:
     """Episode summary"""
@@ -276,8 +268,6 @@ class Agent:
         self._curr_step += 1
         self._curr_total_step += 1
 
-        
-
         if done:
             self.reset()
 
@@ -292,21 +282,22 @@ class Agent:
             if self._epsilon_random < self._epsilon_random_target:
                 self._epsilon_random = self._epsilon_random_target
             
-            #
-            #   Decrease exponentially
-            #
-            # self._epsilon_random = \
-            #     self._epsilon_random_target \
-            #     + (self._epsilon_random_start - self._epsilon_random_target) \
-            #     * math.exp(-self._epsilon_random_decay * self._curr_non_rand_step)
 
     def take_action(self, obs):
         if self._trajectory[-1].done is True:
             return None
         else:
             action = self._pick_action(obs)  #ACT
-            self.append_action(action)
+            self._append_action(action)
             return action
+
+
+    def _append_action(self, action):
+        assert len(self._trajectory) != 0
+
+        self._debug_cum_action += np.sum(action)
+        self._trajectory[-1].action = action
+
 
     def _pick_action(self, obs):
         assert isinstance(obs, np.ndarray)
@@ -342,7 +333,6 @@ class Agent:
         return res
 
 
-
     def observe(self, observation, reward, done):
         self._debug_cum_state += np.sum(observation)
 
@@ -354,17 +344,14 @@ class Agent:
         self._trajectory.append(
             HistoryData(self._curr_total_step, observation, reward, done))
 
-    def append_action(self, action):
-        self._debug_cum_action += np.sum(action)
 
-        if len(self._trajectory) != 0:
-            self._trajectory[-1].action = action
 
     def print_trajectory(self):
         print('Trajectory:')
         for element in self._trajectory:
             print(element)
         print('Total trajectory steps: {0}'.format(len(self._trajectory)))
+
 
     def check_trajectory_terminated_ok(self):
         last_entry = self._trajectory[-1]
@@ -375,9 +362,11 @@ class Agent:
     def learn(self):
         self.eval_td_online()
 
+
     def eval_td_online(self):
         if len(self._trajectory) >= 2:
             self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
+
 
     def eval_td_t(self, t):
         """TD update state-value for single state in trajectory
