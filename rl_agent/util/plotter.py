@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 import pdb
 
@@ -6,12 +7,14 @@ import pdb
 
 class Plotter():
     def __init__(self, realtime_plotting, plot_every, disp_len, 
-        ax_qmax_wf, ax_qmax_im, ax_policy,
+        figures, ax_qmax_wf, ax_qmax_im, ax_policy,
         ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_reward):
 
         self.realtime_plotting = realtime_plotting
         self.plot_every = plot_every
         self.disp_len = disp_len
+
+        self.figures = figures
 
         self.ax_qmax_wf = ax_qmax_wf
         self.ax_qmax_im = ax_qmax_im
@@ -22,34 +25,7 @@ class Plotter():
         self.ax_q_series = ax_q_series
         self.ax_reward = ax_reward
 
-        self.q_val = None
-        self.ser_X =  []
-        self.ser_E0 = []
-        self.ser_E1 = []
-        self.ser_E2 = []
         
-
-    def process(self, logger, current_total_step):
-        """Call this every step to track data"""
-
-        if logger.q_val.data['q_val'][current_total_step] is not None:
-            self.q_val = logger.q_val.data['q_val'][current_total_step]
-
-
-        if logger.q_val.data['series_E0'][current_total_step] is not None:
-            self.ser_X.append(current_total_step)
-            self.ser_E0.append(logger.q_val.data['series_E0'][current_total_step])
-            self.ser_E1.append(logger.q_val.data['series_E1'][current_total_step])
-            self.ser_E2.append(logger.q_val.data['series_E2'][current_total_step])
-
-        if logger.memory.data['hist_St'][current_total_step] is not None:
-            self.hist_St = logger.memory.data['hist_St'][current_total_step]
-            self.hist_At = logger.memory.data['hist_At'][current_total_step]
-            self.hist_Rt_1 = logger.memory.data['hist_Rt_1'][current_total_step]
-            self.hist_St_1 = logger.memory.data['hist_St_1'][current_total_step]
-            self.hist_done = logger.memory.data['hist_done'][current_total_step]
-            self.hist_error = logger.memory.data['hist_error'][current_total_step]
-
     def conditional_plot(self, logger, current_total_step):
         if current_total_step % self.plot_every == 0 and self.realtime_plotting:
             self.plot(logger, current_total_step)
@@ -65,13 +41,15 @@ class Plotter():
         # print(current_total_step % step_span == 0)
         # print(q_val is not None)
 
-        if self.q_val is not None:
-            q_max = np.max(self.q_val, axis=2)
+        q_val, _, _, q_val_step = logger.q_val.get_last('q_val')
+        if q_val is not None:
+            q_max = np.max(q_val, axis=2)
 
             if self.ax_qmax_wf is not None:
                 self.ax_qmax_wf.clear()
+                self.ax_qmax_wf.set_title('q_max: ' + str(q_val_step))
                 plot_q_val_wireframe(self.ax_qmax_wf, q_max,
-                    extent, ('pos', 'vel', 'q_max'))
+                    extent, ('pos', 'vel', 'q_max'), color='gray', alpha=1.0)
 
             if self.ax_qmax_im is not None:
                 self.ax_qmax_im.clear()
@@ -82,7 +60,7 @@ class Plotter():
             
             if self.ax_policy is not None:
                 self.ax_policy.clear()
-                plot_policy(self.ax_policy, self.q_val,
+                plot_policy(self.ax_policy, q_val,
                     extent, h_line=0.0, v_line=-0.5)
 
 
@@ -121,15 +99,18 @@ class Plotter():
         #     ax_stats.legend()
 
         if self.ax_memory is not None:
-            self.ax_memory.clear()
-            # plot_trajectory_2d(self.ax_memory,
-            #     self.hist_St[-1000:,0],
-            #     self.hist_St[-1000:,1],
-            #     self.hist_At[-1000:,0],
-            #     extent, h_line=0.0, v_line=-0.5)
+            hist_St, _, _, hist_step = logger.memory.get_last('hist_St')
+            hist_At, _, _, _ = logger.memory.get_last('hist_At')
+            hist_Rt_1, _, _, _ = logger.memory.get_last('hist_Rt_1')
+            hist_St_1, _, _, _ = logger.memory.get_last('hist_St_1')
+            hist_done, _, _, _ = logger.memory.get_last('hist_done')
+            hist_error, _, _, _ = logger.memory.get_last('hist_error')
 
-            self.ax_memory.plot(self.hist_done * 100, color='green')
-            self.ax_memory.plot(self.hist_error, color='blue')
+            self.ax_memory.clear()
+            self.ax_memory.set_title('mem: ' + str(hist_step))
+            
+            self.ax_memory.plot(hist_done * 100, color='green')
+            self.ax_memory.plot(hist_error, color='blue')
             
             self.ax_memory.set_ylim([0, 100])
 
@@ -157,10 +138,18 @@ class Plotter():
                 ith_chunk = epsumm_rew[max(0, i-49):i+1]
                 ep_avg_rew.append(sum(ith_chunk) / len(ith_chunk))
 
-            self.ax_reward.plot(ep_ends, ep_rewards, color='black', marker='o', markerfacecolor='None')
-            self.ax_reward.plot(ep_ends, ep_avg_rew, color='gray', marker='o', markerfacecolor='None')
+            self.ax_reward.plot(
+                ep_ends, ep_rewards, color='black', 
+                marker='o', markerfacecolor='None')
+            self.ax_reward.plot(
+                ep_ends, ep_avg_rew, color='gray',
+                marker='o', markerfacecolor='None')
 
-def plot_q_val_wireframe(ax, q_val, extent, labels):
+        for fig in self.figures:
+            fig.canvas.draw()
+        plt.pause(0.001)
+
+def plot_q_val_wireframe(ax, q_val, extent, labels, color, alpha):
     """Plot 2d q_val array on 3d wireframe plot.
     
     Params:
@@ -185,7 +174,7 @@ def plot_q_val_wireframe(ax, q_val, extent, labels):
 
     Y, X = np.meshgrid(y_space, x_space)
     
-    ax.plot_wireframe(X, Y, q_val)
+    ax.plot_wireframe(X, Y, q_val, color=color, alpha=alpha)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)

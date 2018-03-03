@@ -4,7 +4,6 @@ import tensorflow as tf
 from . import memory
 from .approximators import AggregateApproximator
 from .approximators import TilesApproximator
-from .approximators import NeuralApproximator
 from .approximators import KerasApproximator
 
 
@@ -91,8 +90,6 @@ class Agent:
 
         self._this_step_rand_act = False
 
-        log_approx = logger.approx if logger is not None else None
-
         #
         #   Initialise Q-function approximator
         #
@@ -145,9 +142,6 @@ class Agent:
 
         if self.logger is not None:
             self.logger.q_val.add_data_item('q_val')
-            self.logger.q_val.add_data_item('series_E0') # Q at point [0.4, 0.035]
-            self.logger.q_val.add_data_item('series_E1')
-            self.logger.q_val.add_data_item('series_E2')
 
         if self.logger is not None:
             self.logger.hist.add_data_item('Rt')
@@ -158,7 +152,7 @@ class Agent:
 
         if self.logger is not None:
             self.logger.memory.add_param('max_size', mem_size_max)
-            self.logger.agent.add_param('batch_size', self._mem_batch_size)
+            self.logger.memory.add_param('batch_size', self._mem_batch_size)
             self.logger.memory.add_param('enable_pmr', mem_enable_pmr)
             self.logger.memory.add_data_item('curr_size')
             self.logger.memory.add_data_item('hist_St')
@@ -276,8 +270,8 @@ class Agent:
                 vi = si %pi_skip
                 q_val[pi, vi] = q_list[si]
 
-        else:
-            q_val=None
+            self.logger.q_val.append(episode, step, total_step, q_val=q_val)
+
 
 
         #
@@ -285,10 +279,7 @@ class Agent:
         #
         if total_step % 10000 == 0:
             ptr = self._memory._curr_insert_ptr
-            # print('ptr', ptr)
-            # aa = self._memory._hist_St[ptr:]
-            # bb = self._memory._hist_St[0:ptr]
-            # cc = np.concatenate((aa, bb))
+
             self.logger.memory.append(episode, step, total_step,
                 curr_size=self._memory.length(),
                 hist_St=np.concatenate((self._memory._hist_St[ptr:], self._memory._hist_St[0:ptr])),
@@ -297,43 +288,31 @@ class Agent:
                 hist_St_1=np.concatenate((self._memory._hist_St_1[ptr:], self._memory._hist_St_1[0:ptr])),
                 hist_done=np.concatenate((self._memory._hist_done[ptr:], self._memory._hist_done[0:ptr])),
                 hist_error=np.concatenate((self._memory._hist_error[ptr:], self._memory._hist_error[0:ptr])) )
-        else:
-            self.logger.memory.append(episode, step, total_step,
-                curr_size=None,
-                hist_St=None,
-                hist_At=None,
-                hist_Rt_1=None,
-                hist_St_1=None,
-                hist_done=None,
-                hist_error=None
-                )
         
         #
         #   Log Q series
         #
-        if total_step % 100 == 0:
-            est = self.Q.estimate_all(np.array([[0.4, 0.035]]))
-        else:
-            est = np.array([[None, None, None]])
+        # if total_step % 100 == 0:
+        #     est = self.Q.estimate_all(np.array([[0.4, 0.035]]))
+        # else:
+        #     est = np.array([[None, None, None]])
 
-        self.logger.q_val.append(episode, step, total_step,
-            q_val=q_val,
-            series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
+        # self.logger.q_val.append(episode, step, total_step,
+        #     q_val=q_val,
+        #     series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
-    def register_callback(self, which, function, extra_params):
+    def register_callback(self, which, function):
 
         if which == 'on_step_end':
             if self._callback_on_step_end is not None:
                 raise ValueError('callback {} already registered')
             self._callback_on_step_end = function
-            self._callback_on_step_end_params = extra_params
         else:
             raise ValueError('unknown callback routine' + which)
 
     def clear_callback(self, which):
         if which == 'on_step_end':
             self._callback_on_step_end = None
-            self._callback_on_step_end_params = None
         else:
             raise ValueError('unknown callback routine' + which)
 
@@ -348,8 +327,7 @@ class Agent:
                 reward=self._trajectory[-1].reward,
                 observation=self._trajectory[-1].observation,
                 done=self._trajectory[-1].done,
-                action=self._trajectory[-1].action,
-                extra_params=self._callback_on_step_end_params)
+                action=self._trajectory[-1].action)
 
         # -- roll into next time step --
 
@@ -512,9 +490,6 @@ class Agent:
             errors = self.Q.train(states, actions, targets)
 
             self._memory.update_errors(indices, np.abs(errors))
-
-        elif isinstance(self.Q, NeuralApproximator):
-            raise NotImplemented()
 
         else:
 

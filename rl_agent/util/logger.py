@@ -91,6 +91,15 @@ class Log():
         for key, val in data.items():
             self.data[key].append(val)
 
+    def get_last(self, key):
+        arr = self.data[key]
+        item = self.data[key][-1] if len(arr) > 0 else None
+        episode = self.episodes[-1]
+        step = self.steps[-1]
+        total_step = self.total_steps[-1]
+        print('RETURING:', item)
+        return item, episode, step, total_step
+
 class Logger():
     def __init__(self):
 

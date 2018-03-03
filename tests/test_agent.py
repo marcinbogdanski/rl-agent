@@ -33,17 +33,6 @@ class TestAgent(unittest.TestCase):
         config.gpu_options.per_process_gpu_memory_fraction=0.2
         self.sess = tf.Session(config=config)
 
-        #
-        #   Logger etc
-        #
-        self.logger = rl.logger.Logger('curr_datetime', 'hostname', 'git_hash')
-        self.logger.agent = rl.logger.Log('Agent')
-        self.logger.q_val = rl.logger.Log('Q_Val')
-        self.logger.env = rl.logger.Log('Environment', 'Mountain Car')
-        self.logger.hist = rl.logger.Log('History', 'History of all states visited')
-        self.logger.memory = rl.logger.Log('Memory', 'Agent full memory dump on given timestep')
-        self.logger.approx = rl.logger.Log('Approx', 'Approximator')
-
         
     def tearDown(self):
         pass
