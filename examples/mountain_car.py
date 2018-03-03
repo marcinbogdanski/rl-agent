@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 
@@ -7,12 +8,16 @@ import rl_agent as rl
 
 import tensorflow as tf
 
+
 class Program():
     def __init__(self):
+        self.env = None
         self.logger = None
         self.plotter = None
 
     def on_step_end(self, agent, reward, observation, done, action):
+
+        self.env.render()
 
         if agent.total_step % 1000 == 0:
             print()
@@ -40,16 +45,16 @@ class Program():
         #
         if args.plot:
             fig1 = plt.figure()
-            fig2 = plt.figure()
+            #fig2 = plt.figure()
             self.plotter = rl.util.Plotter(
                 realtime_plotting=True, plot_every=1000, disp_len=1000,
-                figures=(fig1, fig2),
+                figures=(fig1, ),
                 ax_qmax_wf=fig1.add_subplot(2,4,1, projection='3d'),
                 ax_qmax_im=fig1.add_subplot(2,4,2),
                 ax_policy=fig1.add_subplot(2,4,3),
                 ax_trajectory=fig1.add_subplot(2,4,4),
                 ax_stats=None,
-                ax_memory=fig2.add_subplot(1,1,1),
+                ax_memory=None, #fig2.add_subplot(1,1,1),
                 ax_q_series=None,
                 ax_reward=fig1.add_subplot(2,1,2),
             )
@@ -63,14 +68,32 @@ class Program():
             self.logger.agent = rl.util.Log('Agent')
             self.logger.q_val = rl.util.Log('Q_Val')
             self.logger.env = rl.util.Log('Environment')
-            self.logger.hist = rl.util.Log('History', 'All states visited')
+            self.logger.hist = rl.util.Log('History', 'All observations visited')
             self.logger.memory = rl.util.Log('Memory', 'Full memory dump')
             self.logger.approx = rl.util.Log('Approx', 'Approximator')
             self.logger.epsumm = rl.util.Log('Episodes')
 
 
-        env = gym.make('MountainCar-v0').env
-        env.seed(args.seed)
+        self.env = rl.util.EnvTranslator(
+            env=gym.make('MountainCar-v0').env,
+            observation_space=None,
+            observation_translator=None,
+            action_space=None,
+            action_translator=None,
+            reward_translator=None)
+
+        # self.env = EnvTranslator(
+        #     env=gym.make('Pendulum-v0').env,
+        #     observation_space = gym.spaces.Box(
+        #         low=np.array([-np.pi, -1.0]), 
+        #         high=np.array([np.pi, 1.0])),
+        #     observation_translator = lambda st: 
+        #         np.array([np.arctan2(st[1] ,st[0]), st[2]/8]),
+        #     action_space=gym.spaces.Discrete(3),
+        #     action_translator=lambda at: np.array([(at-1.0)/3]),
+        #     reward_translator=None)
+
+        self.env.seed(args.seed)
 
         q_model = tf.keras.models.Sequential()
         q_model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=2))
@@ -80,8 +103,8 @@ class Program():
             optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
         agent = rl.Agent(
-            state_space=env.observation_space,
-            action_space=env.action_space,
+            state_space=self.env.observation_space,
+            action_space=self.env.action_space,
             discount=0.99,
             expl_start=False,
             nb_rand_steps=0,
@@ -112,8 +135,8 @@ class Program():
         #   Run application
         #
         try:
-            rl.train_agent(env=env, agent=agent, 
-                total_steps=10000, target_avg_reward=-200)
+            rl.train_agent(env=self.env, agent=agent, 
+                total_steps=1000000, target_avg_reward=-200)
         finally:
             if args.logfile is not None:
                 logger.save(args.logfile)

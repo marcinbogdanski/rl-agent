@@ -103,7 +103,6 @@ class Log():
         episode = self.episodes[-1]
         step = self.steps[-1]
         total_step = self.total_steps[-1]
-        print('RETURING:', item)
         return item, episode, step, total_step
 
 class Logger():
