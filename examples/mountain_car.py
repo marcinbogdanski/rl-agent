@@ -40,40 +40,10 @@ class Program():
         args = rl.util.parse_common_args()
         rl.util.try_freeze_random_seeds(args.seed, args.reproducible)
                 
+        
         #
-        #   Init plotter
+        #   Environment
         #
-        if args.plot:
-            fig1 = plt.figure()
-            #fig2 = plt.figure()
-            self.plotter = rl.util.Plotter(
-                realtime_plotting=True, plot_every=1000, disp_len=1000,
-                figures=(fig1, ),
-                ax_qmax_wf=fig1.add_subplot(2,4,1, projection='3d'),
-                ax_qmax_im=fig1.add_subplot(2,4,2),
-                ax_policy=fig1.add_subplot(2,4,3),
-                ax_trajectory=fig1.add_subplot(2,4,4),
-                ax_stats=None,
-                ax_memory=None, #fig2.add_subplot(1,1,1),
-                ax_q_series=None,
-                ax_reward=fig1.add_subplot(2,1,2),
-            )
-
-        #
-        #   Logging
-        #
-        if args.logfile is not None or args.plot:
-            self.logger = rl.util.Logger()
-
-            self.logger.agent = rl.util.Log('Agent')
-            self.logger.q_val = rl.util.Log('Q_Val')
-            self.logger.env = rl.util.Log('Environment')
-            self.logger.hist = rl.util.Log('History', 'All observations visited')
-            self.logger.memory = rl.util.Log('Memory', 'Full memory dump')
-            self.logger.approx = rl.util.Log('Approx', 'Approximator')
-            self.logger.epsumm = rl.util.Log('Episodes')
-
-
         self.env = rl.util.EnvTranslator(
             env=gym.make('MountainCar-v0').env,
             observation_space=None,
@@ -81,7 +51,6 @@ class Program():
             action_space=None,
             action_translator=None,
             reward_translator=None)
-
         # self.env = rl.util.EnvTranslator(
         #     env=gym.make('Pendulum-v0').env,
         #     observation_space = gym.spaces.Box(
@@ -92,16 +61,23 @@ class Program():
         #     action_space=gym.spaces.Discrete(3),
         #     action_translator=lambda at: np.array([(at-1.0)/3]),
         #     reward_translator=None)
-
         self.env.seed(args.seed)
 
+
+        #
+        #   Model
+        #
         q_model = tf.keras.models.Sequential()
-        q_model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=2))
-        q_model.add(tf.keras.layers.Dense(units=256, activation='relu'))
-        q_model.add(tf.keras.layers.Dense(units=3, activation='linear'))
+        q_model.add(tf.keras.layers.Dense(256, 'relu', input_dim=2))
+        q_model.add(tf.keras.layers.Dense(256, 'relu'))
+        q_model.add(tf.keras.layers.Dense(3, 'linear'))
         q_model.compile(loss='mse', 
             optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
+
+        #
+        #   Agent
+        #
         agent = rl.Agent(
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
@@ -124,21 +100,56 @@ class Program():
             #     init_val=0)
             )
 
-        self.plotter.set_state_action_spaces(self.env.observation_space.low, self.env.observation_space.high, h_line=0.0, v_line=-0.5)
-
-        agent.log_episodes = self.logger.epsumm
-        agent.log_agent = None
-        agent.log_hist = self.logger.hist
-        agent.memory.install_logger(self.logger.memory, log_every=1000)
-        agent.Q.install_logger(self.logger.q_val, log_every=1000, samples=(64, 64))
-
-        agent.register_callback('on_step_end', self.on_step_end)
-
-        
-
 
         #
-        #   Run application
+        #   Plotting
+        #
+        if args.plot:
+            fig1 = plt.figure()
+            #fig2 = plt.figure()
+            self.plotter = rl.util.Plotter(
+                realtime_plotting=True, plot_every=1000, disp_len=1000,
+                figures=(fig1, ),
+                ax_qmax_wf=fig1.add_subplot(2,4,1, projection='3d'),
+                ax_qmax_im=fig1.add_subplot(2,4,2),
+                ax_policy=fig1.add_subplot(2,4,3),
+                ax_trajectory=fig1.add_subplot(2,4,4),
+                ax_stats=None,
+                ax_memory=None, #fig2.add_subplot(1,1,1),
+                ax_q_series=None,
+                ax_reward=fig1.add_subplot(2,1,2),
+            )
+            self.plotter.set_state_action_spaces(
+                self.env.observation_space.low, 
+                self.env.observation_space.high, 
+                h_line=0.0, v_line=-0.5)
+
+        #
+        #   Logging
+        #
+        if args.logfile is not None or args.plot:
+            self.logger = rl.util.Logger()
+
+            self.logger.agent = rl.util.Log('Agent')
+            self.logger.q_val = rl.util.Log('Q_Val')
+            self.logger.env = rl.util.Log('Environment')
+            self.logger.hist = rl.util.Log('History', 'All sates visited')
+            self.logger.memory = rl.util.Log('Memory', 'Full memory dump')
+            self.logger.approx = rl.util.Log('Approx', 'Approximator')
+            self.logger.epsumm = rl.util.Log('Episodes')
+
+            agent.log_episodes = self.logger.epsumm
+            agent.log_agent = None
+            agent.log_hist = self.logger.hist
+            agent.memory.install_logger(self.logger.memory, log_every=1000)
+            agent.Q.install_logger(
+                self.logger.q_val, log_every=1000, samples=(64, 64))
+
+            agent.register_callback('on_step_end', self.on_step_end)
+
+        
+        #
+        #   Runner
         #
         try:
             rl.train_agent(env=self.env, agent=agent, 
@@ -147,11 +158,6 @@ class Program():
             if args.logfile is not None:
                 logger.save(args.logfile)
                 print('Log saved')
-
-        fp, ws, st, act, rew, done = agent.get_fingerprint()
-        print('FINGERPRINT:', fp)
-        print('  wegight sum:', ws)
-        print('  st, act, rew, done:', st, act, rew, done)
         
         if self.plotter is not None:
             plt.show()
