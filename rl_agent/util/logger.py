@@ -1,5 +1,8 @@
 import pickle
 
+import subprocess
+import socket
+import datetime
 
 class Log():
     def __init__(self, name, description=''):
@@ -89,10 +92,12 @@ class Log():
             self.data[key].append(val)
 
 class Logger():
-    def __init__(self, datetime=None, hostname=None, git_hash=None):
-        self.datetime = datetime
-        self.hostname = hostname
-        self.git_hash = git_hash
+    def __init__(self):
+
+        self.datetime = str(datetime.datetime.now())  # date and time
+        self.hostname = socket.gethostname()  # name of PC where script is run
+        res = subprocess.run(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE)
+        self.git_hash = res.stdout.decode('utf-8')  # git revision if any
 
         self.agent = Log('Agent')
         self.q_val = Log('Q_Val')

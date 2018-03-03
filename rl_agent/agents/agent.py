@@ -117,6 +117,7 @@ class Agent:
         self._completed_episodes = 0
 
         self._callback_on_step_end = None
+        self._callback_on_step_end_params = None
         
         self._episodes_history = []
         self._trajectory = []
@@ -319,18 +320,20 @@ class Agent:
             q_val=q_val,
             series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
-    def register_callback(self, which, function):
+    def register_callback(self, which, function, extra_params):
 
         if which == 'on_step_end':
             if self._callback_on_step_end is not None:
                 raise ValueError('callback {} already registered')
             self._callback_on_step_end = function
+            self._callback_on_step_end_params = extra_params
         else:
             raise ValueError('unknown callback routine' + which)
 
     def clear_callback(self, which):
         if which == 'on_step_end':
             self._callback_on_step_end = None
+            self._callback_on_step_end_params = None
         else:
             raise ValueError('unknown callback routine' + which)
 
@@ -345,7 +348,8 @@ class Agent:
                 reward=self._trajectory[-1].reward,
                 observation=self._trajectory[-1].observation,
                 done=self._trajectory[-1].done,
-                action=self._trajectory[-1].action)
+                action=self._trajectory[-1].action,
+                extra_params=self._callback_on_step_end_params)
 
         # -- roll into next time step --
 
