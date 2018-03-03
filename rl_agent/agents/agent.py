@@ -67,8 +67,7 @@ class Agent:
         mem_batch_size,
         mem_enable_pmr,
 
-        q_fun_approx,
-        logger=None):
+        q_fun_approx):
 
         self._state_space = state_space
         self._action_space = action_space
@@ -100,7 +99,7 @@ class Agent:
         #
         #   Initialise Memory
         #
-        self._memory = memory.Memory(
+        self.memory = memory.Memory(
             state_space=state_space,
             action_space=action_space,
             max_len=mem_size_max,
@@ -128,44 +127,10 @@ class Agent:
         self._debug_cum_reward = 0
         self._debug_cum_done = 0
 
-        self.logger = logger
-        if self.logger is not None:
-            self.logger.agent.add_param('discount', self._discount)
-            self.logger.agent.add_param('nb_rand_steps', self.nb_rand_steps)
-            
-            self.logger.agent.add_param('e_rand_start', self._epsilon_random_start)
-            self.logger.agent.add_param('e_rand_target', self._epsilon_random_target)
-            self.logger.agent.add_param('e_rand_decay', self._epsilon_random_decay)
+        self.log_episodes = None
+        self.log_agent = None
+        self.log_hist = None
 
-            self.logger.agent.add_data_item('e_rand')
-            self.logger.agent.add_data_item('rand_act')
-
-        if self.logger is not None:
-            self.logger.q_val.add_data_item('q_val')
-
-        if self.logger is not None:
-            self.logger.hist.add_data_item('Rt')
-            self.logger.hist.add_data_item('St_pos')
-            self.logger.hist.add_data_item('St_vel')
-            self.logger.hist.add_data_item('At')
-            self.logger.hist.add_data_item('done')
-
-        if self.logger is not None:
-            self.logger.memory.add_param('max_size', mem_size_max)
-            self.logger.memory.add_param('batch_size', self._mem_batch_size)
-            self.logger.memory.add_param('enable_pmr', mem_enable_pmr)
-            self.logger.memory.add_data_item('curr_size')
-            self.logger.memory.add_data_item('hist_St')
-            self.logger.memory.add_data_item('hist_At')
-            self.logger.memory.add_data_item('hist_Rt_1')
-            self.logger.memory.add_data_item('hist_St_1')
-            self.logger.memory.add_data_item('hist_done')
-            self.logger.memory.add_data_item('hist_error')
-
-        if self.logger is not None:
-            self.logger.epsumm.add_data_item('start')
-            self.logger.epsumm.add_data_item('end')
-            self.logger.epsumm.add_data_item('reward')
 
     @property
     def step(self):
@@ -215,8 +180,8 @@ class Agent:
 
             self._completed_episodes += 1
 
-            if self.logger is not None:
-                self.logger.epsumm.append(
+            if self.log_episodes is not None:
+                self.log_episodes.append(
                     self.completed_episodes, self.step, self.total_step,
                     start=ep_start, end=ep_end, reward=total_reward)           
 
@@ -226,80 +191,57 @@ class Agent:
 
     def log(self, episode, step, total_step):
         
-        if self.logger is None:
-            return
+        #
+        #   Log episodes
+        #
+        if self.log_episodes is not None \
+            and not self.log_episodes.is_initialized:
+
+            self.log_episodes.add_data_item('start')
+            self.log_episodes.add_data_item('end')
+            self.log_episodes.add_data_item('reward')
 
         #
         #   Log agent
         #
-        self.logger.agent.append(episode, step, total_step,
-            e_rand=self._epsilon_random,
-            rand_act=self._this_step_rand_act)
+        if self.log_agent is not None and not self.log_agent.is_initialized:
+            self.log_agent.add_param('discount', self._discount)
+            self.log_agent.add_param('nb_rand_steps', self.nb_rand_steps)
+            
+            self.log_agent.add_param('e_rand_start', self._epsilon_random_start)
+            self.log_agent.add_param('e_rand_target', self._epsilon_random_target)
+            self.log_agent.add_param('e_rand_decay', self._epsilon_random_decay)
+
+            self.log_agent.add_data_item('e_rand')
+            self.log_agent.add_data_item('rand_act')
+
+        if self.log_agent is not None:
+            self.log_agent.append(episode, step, total_step,
+                e_rand=self._epsilon_random,
+                rand_act=self._this_step_rand_act)
 
         #
         #   Log history
         #
-        self.logger.hist.append(episode, step, total_step,
-            Rt=self._trajectory[-1].reward,
-            St_pos=self._trajectory[-1].observation[0],
-            St_vel=self._trajectory[-1].observation[1],
-            At=self._trajectory[-1].action,
-            done=self._trajectory[-1].done)
+        if self.log_hist is not None and not self.log_hist.is_initialized:
+            self.log_hist.add_data_item('Rt')
+            self.log_hist.add_data_item('St_pos')
+            self.log_hist.add_data_item('St_vel')
+            self.log_hist.add_data_item('At')
+            self.log_hist.add_data_item('done')
 
-        #
-        #   Log Q values
-        #
-        if total_step % 1000 == 0:
-            positions = np.linspace(-1.2, 0.5, 64)
-            velocities = np.linspace(-0.07, 0.07, 64)
+        if self.log_hist is not None:
+            self.log_hist.append(episode, step, total_step,
+                Rt=self._trajectory[-1].reward,
+                St_pos=self._trajectory[-1].observation[0],
+                St_vel=self._trajectory[-1].observation[1],
+                At=self._trajectory[-1].action,
+                done=self._trajectory[-1].done)
 
-            num_tests = len(positions) * len(velocities)
-            pi_skip = len(velocities)
-            states = np.zeros([num_tests, 2])
-            for pi in range(len(positions)):
-                for vi in range(len(velocities)):
-                    states[pi*pi_skip + vi, 0] = positions[pi]
-                    states[pi*pi_skip + vi, 1] = velocities[vi]
+        self.memory.log(episode, step, total_step)
+        if isinstance(self.Q, TilesApproximator):
+            self.Q.log(episode, step, total_step)
 
-
-            q_list = self.Q.estimate_all(states)
-            q_val = np.zeros([len(positions), len(velocities), self._action_space.n])  #ACT
-            
-            for si in range(len(states)):    
-                pi = si//pi_skip
-                vi = si %pi_skip
-                q_val[pi, vi] = q_list[si]
-
-            self.logger.q_val.append(episode, step, total_step, q_val=q_val)
-
-
-
-        #
-        #   Log Memory
-        #
-        if total_step % 10000 == 0:
-            ptr = self._memory._curr_insert_ptr
-
-            self.logger.memory.append(episode, step, total_step,
-                curr_size=self._memory.length(),
-                hist_St=np.concatenate((self._memory._hist_St[ptr:], self._memory._hist_St[0:ptr])),
-                hist_At=np.concatenate((self._memory._hist_At[ptr:], self._memory._hist_At[0:ptr])),
-                hist_Rt_1=np.concatenate((self._memory._hist_Rt_1[ptr:], self._memory._hist_Rt_1[0:ptr])),
-                hist_St_1=np.concatenate((self._memory._hist_St_1[ptr:], self._memory._hist_St_1[0:ptr])),
-                hist_done=np.concatenate((self._memory._hist_done[ptr:], self._memory._hist_done[0:ptr])),
-                hist_error=np.concatenate((self._memory._hist_error[ptr:], self._memory._hist_error[0:ptr])) )
-        
-        #
-        #   Log Q series
-        #
-        # if total_step % 100 == 0:
-        #     est = self.Q.estimate_all(np.array([[0.4, 0.035]]))
-        # else:
-        #     est = np.array([[None, None, None]])
-
-        # self.logger.q_val.append(episode, step, total_step,
-        #     q_val=q_val,
-        #     series_E0=est[0, 0], series_E1=est[0, 1], series_E2=None)#est[0, 2])
 
     def register_callback(self, which, function):
 
@@ -461,7 +403,7 @@ class Agent:
         St_1 = self._trajectory[t+1].observation  # next state tuple (x, y)
         Rt_1 = self._trajectory[t+1].reward       # next step reward
         done = self._trajectory[t+1].done
-        self._memory.append(St, At, Rt_1, St_1, done)
+        self.memory.append(St, At, Rt_1, St_1, done)
 
         if self._curr_total_step < self.nb_rand_steps:
             # no lerninng during initial random phase
@@ -476,7 +418,7 @@ class Agent:
 
             # Get batch
             states, actions, rewards_1, states_1, dones, indices = \
-                self._memory.get_batch(self._mem_batch_size)
+                self.memory.get_batch(self._mem_batch_size)
             
             # Calculates max_Q for next states
             q_max = self.Q.max_op(states_1)
@@ -489,7 +431,7 @@ class Agent:
 
             errors = self.Q.train(states, actions, targets)
 
-            self._memory.update_errors(indices, np.abs(errors))
+            self.memory.update_errors(indices, np.abs(errors))
 
         else:
 

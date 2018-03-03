@@ -66,9 +66,7 @@ class TestAgent(unittest.TestCase):
             mem_size_max=10000,
             mem_batch_size=64,
             mem_enable_pmr=False,
-            q_fun_approx=rl.KerasApproximator(model=q_model),
-
-            logger=None)
+            q_fun_approx=rl.KerasApproximator(model=q_model))
 
         agent.register_callback('on_step_end', on_step_end)
 
@@ -111,9 +109,7 @@ class TestAgent(unittest.TestCase):
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=8,
-                init_val=0),
-
-            logger=None)
+                init_val=0))
 
         agent.register_callback('on_step_end', on_step_end)
 
@@ -157,9 +153,7 @@ class TestAgent(unittest.TestCase):
             q_fun_approx=rl.AggregateApproximator(
                 step_size=0.3,
                 bins=[64, 64],
-                init_val=0),
-
-            logger=None)
+                init_val=0))
 
         agent.register_callback('on_step_end', on_step_end)
 

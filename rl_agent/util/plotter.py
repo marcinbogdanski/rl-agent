@@ -81,22 +81,6 @@ class Plotter():
             plot_trajectory_2d(self.ax_trajectory, 
                 St_pos, St_vel, At, extent, h_line=0.0, v_line=-0.5)
 
-        # if ax_stats is not None:
-        #     ax_stats.clear()
-        #     i = current_total_step
-
-        #     t_steps = logger.agent.total_steps[0:i:1]
-        #     ser_e_rand = logger.agent.data['e_rand'][0:i:1]
-        #     ser_rand_act = logger.agent.data['rand_act'][0:i:1]
-        #     ser_mem_size = logger.agent.data['mem_size'][0:i:1]
-
-        #     arr = logger.agent.data['rand_act'][max(0, i-1000):i]
-        #     nz = np.count_nonzero(arr)
-        #     print('RAND: ', nz, ' / ', len(arr))
-
-        #     # ax_stats.plot(t_steps, ser_e_rand, label='e_rand', color='red')
-        #     ax_stats.plot(t_steps, ser_rand_act, label='rand_act', color='blue')
-        #     ax_stats.legend()
 
         if self.ax_memory is not None:
             hist_St, _, _, hist_step = logger.memory.get_last('hist_St')

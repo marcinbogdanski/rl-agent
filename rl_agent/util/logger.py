@@ -5,9 +5,9 @@ import socket
 import datetime
 
 class Log():
-    def __init__(self, name, description=''):
+    def __init__(self, name, desc=''):
         self.name = name
-        self.description = description
+        self.description = desc
         
         self.params = {}
         self.params_info = {}
@@ -19,7 +19,12 @@ class Log():
         self.data = {}
         self.data_info = {}
 
+        self._is_initialized = False
         self._recording_started = False
+
+    @property
+    def is_initialized(self):
+        return self._is_initialized
 
     def __str__(self):
         res = ''
@@ -59,6 +64,7 @@ class Log():
         self.params_info[name] = info
 
     def add_data_item(self, name, info=''):
+        self._is_initialized = True
         if not self._recording_started:
             self.data[name] = []
             self.data_info[name] = info
@@ -107,14 +113,6 @@ class Logger():
         self.hostname = socket.gethostname()  # name of PC where script is run
         res = subprocess.run(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE)
         self.git_hash = res.stdout.decode('utf-8')  # git revision if any
-
-        self.agent = Log('Agent')
-        self.q_val = Log('Q_Val')
-        self.env = Log('Environment')
-        self.hist = Log('History', 'History of all states visited')
-        self.memory = Log('Memory', 'Agent full memory dump on given timestep')
-        self.approx = Log('Approx', 'Approximator')
-        self.epsumm = Log('Episodes')
 
     def __str__(self):
         res = 'Date time: ' + self.datetime + '\n' + \

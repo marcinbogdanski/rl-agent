@@ -60,6 +60,9 @@ class Memory:
         self._hist_done = np.zeros(done_shape, dtype=bool)
         self._hist_error = np.zeros(error_shape, dtype=float)
 
+        self._log_every = None
+        self._log_mem = None
+
     def append(self, St, At, Rt_1, St_1, done):
         """Add one sample to memory, override oldest if max_len reached.
 
@@ -173,6 +176,41 @@ class Memory:
         assert (errors > 0).all
 
         self._hist_error[indices] = errors
+
+    def install_logger(self, logger, log_every):
+        self._log_mem = logger
+        self._log_every = log_every
+
+    def log(self, episode, step, total_step):
+
+        if self._log_mem is not None and not self._log_mem.is_initialized:
+            self._log_mem.add_param('max_len', self._max_len)
+            self._log_mem.add_param('enable_pmr', self._enable_pmr)
+            self._log_mem.add_data_item('curr_size')
+            self._log_mem.add_data_item('hist_St')
+            self._log_mem.add_data_item('hist_At')
+            self._log_mem.add_data_item('hist_Rt_1')
+            self._log_mem.add_data_item('hist_St_1')
+            self._log_mem.add_data_item('hist_done')
+            self._log_mem.add_data_item('hist_error')
+
+        #
+        #   Log Memory
+        #
+        if self._log_mem is not None and total_step % self._log_every == 0:
+
+            ptr = self._curr_insert_ptr
+            self._log_mem.append(
+                episode, step, total_step,
+                curr_size=self.length(),
+                hist_St=np.concatenate((self._hist_St[ptr:], self._hist_St[0:ptr])),
+                hist_At=np.concatenate((self._hist_At[ptr:], self._hist_At[0:ptr])),
+                hist_Rt_1=np.concatenate((self._hist_Rt_1[ptr:], self._hist_Rt_1[0:ptr])),
+                hist_St_1=np.concatenate((self._hist_St_1[ptr:], self._hist_St_1[0:ptr])),
+                hist_done=np.concatenate((self._hist_done[ptr:], self._hist_done[0:ptr])),
+                hist_error=np.concatenate((self._hist_error[ptr:], self._hist_error[0:ptr])) )
+        
+
 
 if __name__ == '__main__':
     # this is old test-method
