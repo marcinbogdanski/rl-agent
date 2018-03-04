@@ -141,7 +141,6 @@ class Program():
             self.logger.epsumm = rl.util.Log('Episodes')
 
             agent.log_episodes = self.logger.epsumm
-            agent.log_agent = None
             agent.log_hist = self.logger.hist
             agent.memory.install_logger(self.logger.memory, log_every=1000)
             agent.Q.install_logger(

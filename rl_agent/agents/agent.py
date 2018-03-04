@@ -90,17 +90,6 @@ class Agent:
         self.policy.set_state_action_spaces(state_space, action_space)
         self.policy.link(self)  # Policy may need access to Q-approx etc.
 
-        # if set, first action in episode will always be random
-        self._expl_start = self.policy._expl_start
-
-        # if true, exec random action until memory is full
-        self.nb_rand_steps = self.policy.nb_rand_steps  
-
-        # policy parameter, 0 => always greedy
-        self._epsilon_random = self.policy._epsilon_random
-        self._epsilon_random_start = self.policy._epsilon_random_start
-        self._epsilon_random_target = self.policy._epsilon_random_target
-        self._epsilon_random_decay = self.policy._epsilon_random_decay
 
         self._this_step_rand_act = False
 
@@ -116,7 +105,6 @@ class Agent:
         self.reset()
 
         self._curr_total_step = 0
-        self._curr_non_rand_step = 0
 
         self._debug_cum_state = 0
         self._debug_cum_action = 0
@@ -124,7 +112,6 @@ class Agent:
         self._debug_cum_done = 0
 
         self.log_episodes = None
-        self.log_agent = None
         self.log_hist = None
 
 
@@ -183,7 +170,8 @@ class Agent:
 
         self._curr_step = 0
         self._trajectory = []        # Agent saves history on it's way
-        self._force_random_action = self._expl_start
+
+        self.policy.reset()
 
     def log(self, episode, step, total_step):
         
@@ -196,25 +184,6 @@ class Agent:
             self.log_episodes.add_data_item('start')
             self.log_episodes.add_data_item('end')
             self.log_episodes.add_data_item('reward')
-
-        #
-        #   Log agent
-        #
-        if self.log_agent is not None and not self.log_agent.is_initialized:
-            self.log_agent.add_param('discount', self._discount)
-            self.log_agent.add_param('nb_rand_steps', self.nb_rand_steps)
-            
-            self.log_agent.add_param('e_rand_start', self._epsilon_random_start)
-            self.log_agent.add_param('e_rand_target', self._epsilon_random_target)
-            self.log_agent.add_param('e_rand_decay', self._epsilon_random_decay)
-
-            self.log_agent.add_data_item('e_rand')
-            self.log_agent.add_data_item('rand_act')
-
-        if self.log_agent is not None:
-            self.log_agent.append(episode, step, total_step,
-                e_rand=self._epsilon_random,
-                rand_act=self._this_step_rand_act)
 
         #
         #   Log history
@@ -274,23 +243,17 @@ class Agent:
         if done:
             self.reset()
 
-        if self._curr_total_step > self.nb_rand_steps:
-            self._curr_non_rand_step += 1
-
-            #
-            #   Decrease linearly
-            #
-            if self._epsilon_random > self._epsilon_random_target:
-                self._epsilon_random -= self._epsilon_random_decay
-            if self._epsilon_random < self._epsilon_random_target:
-                self._epsilon_random = self._epsilon_random_target
-            
+        self.policy.next_step(self._curr_total_step)
+ 
 
     def take_action(self, obs):
         if self._trajectory[-1].done is True:
             return None
         else:
-            action = self._pick_action(obs)  #ACT
+            action = self.policy.pick_action(obs,
+                                            self.completed_episodes,
+                                            self._curr_step,
+                                            self._curr_total_step)
             self._append_action(action)
             return action
 
@@ -300,40 +263,6 @@ class Agent:
 
         self._debug_cum_action += np.sum(action)
         self._trajectory[-1].action = action
-
-
-    def _pick_action(self, obs):
-        assert isinstance(obs, np.ndarray)
-        assert obs.shape == (2, )
-
-        if self._curr_total_step < self.nb_rand_steps:
-            self._this_step_rand_act = True
-            return np.random.choice([0, 1, 2])
-            #return self._action_space.sample()
-
-        if self._force_random_action:
-            self._force_random_action = False
-            self._this_step_rand_act = True
-            return np.random.choice([0, 1, 2])
-            #return self._action_space.sample()
-
-        if np.random.rand() < self._epsilon_random:
-            # pick random action
-            self._this_step_rand_act = True
-            res = np.random.choice([0, 1, 2])
-            #res = self._action_space.sample()
-
-        else:
-            self._this_step_rand_act = False
-            # act greedy
-
-            obs = obs.reshape([1, 2])
-            q_arr = self.Q.estimate_all(obs).flatten()
-            index = _rand_argmax(q_arr)
-            # res = self._action_space[index]  #ACT
-            res = index
-
-        return res
 
 
     def observe(self, observation, reward, done):
@@ -397,7 +326,7 @@ class Agent:
         done = self._trajectory[t+1].done
         self.memory.append(St, At, Rt_1, St_1, done)
 
-        if self._curr_total_step < self.nb_rand_steps:
+        if self._curr_total_step < self.policy.nb_rand_steps:
             # no lerninng during initial random phase
             return
 
@@ -435,7 +364,11 @@ class Agent:
             else:
                 At_1 = self._trajectory[t+1].action
                 if At_1 is None:
-                    At_1 = self._pick_action(St)
+                    # TODO: should this be St, or St_1 !?!
+                    At_1 = self.policy.pick_action(St,
+                                                   self.completed_episodes,
+                                                   self._curr_step,
+                                                   self._curr_total_step)
                 Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
             self.Q.train(St, At, Tt)

@@ -45,6 +45,9 @@ class QMaxPolicy:
         self._force_random_action = self._expl_start
 
     def next_step(self, total_step):
+        # TODO: remove this method?
+        # calc _epsilon_random directly from total_step in pick action
+
         if total_step > self.nb_rand_steps:
 
             #

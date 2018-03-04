@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from .base_approx import BaseApproximator, rand_argmax
+from .base_approx import BaseApproximator
 import gym
 
 import pdb
