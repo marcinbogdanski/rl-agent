@@ -66,19 +66,19 @@ class QMaxPolicy:
 
         if total_step < self._nb_rand_steps:
             self._this_step_rand_act = True
-            return np.random.choice([0, 1, 2])
+            return np.random.choice(range(self._action_space.n))
             #return self._action_space.sample()
 
         if self._force_random_action:
             self._force_random_action = False
             self._this_step_rand_act = True
-            return np.random.choice([0, 1, 2])
+            return np.random.choice(range(self._action_space.n))
             #return self._action_space.sample()
 
         if np.random.rand() < self._epsilon_random:
             # pick random action
             self._this_step_rand_act = True
-            res = np.random.choice([0, 1, 2])
+            res = np.random.choice(range(self._action_space.n))
             #res = self._action_space.sample()
 
         else:
