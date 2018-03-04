@@ -39,28 +39,28 @@ class Program():
         
         args = rl.util.parse_common_args()
         rl.util.try_freeze_random_seeds(args.seed, args.reproducible)
-                
+        
+        
         
         #
         #   Environment
         #
+        def obs_trans(obs):
+            theta = np.arctan2(obs[1], obs[0])
+            vel = obs[2]
+            return np.array([theta, vel])
+        def act_trans(act):
+            torques = [-2.0, -0.5, 0.0, 0.5, 2.0]
+            return np.array([torques[act]])
         self.env = rl.util.EnvTranslator(
-            env=gym.make('MountainCar-v0').env,
-            observation_space=None,
-            observation_translator=None,
-            action_space=None,
-            action_translator=None,
+            env=gym.make('Pendulum-v0').env,
+            observation_space=gym.spaces.Box(
+                low=np.array([-np.pi, -8.0]), 
+                high=np.array([np.pi, 8.0])),
+            observation_translator=obs_trans,
+            action_space=gym.spaces.Discrete(5),
+            action_translator=act_trans,
             reward_translator=None)
-        # self.env = rl.util.EnvTranslator(
-        #     env=gym.make('Pendulum-v0').env,
-        #     observation_space = gym.spaces.Box(
-        #         low=np.array([-np.pi, -1.0]), 
-        #         high=np.array([np.pi, 1.0])),
-        #     observation_translator = lambda st: 
-        #         np.array([np.arctan2(st[1] ,st[0]), st[2]/8]),
-        #     action_space=gym.spaces.Discrete(3),
-        #     action_translator=lambda at: np.array([(at-1.0)/3]),
-        #     reward_translator=None)
         self.env.seed(args.seed)
 
 
@@ -84,15 +84,15 @@ class Program():
             discount=0.99,
             expl_start=False,
             nb_rand_steps=0,
-            e_rand_start=1.0,
-            e_rand_target=0.1,
+            e_rand_start=0.0,
+            e_rand_target=0.0,
             e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
-                num_tillings=8,
+                num_tillings=16,
                 init_val=0)
             # q_fun_approx=rl.AggregateApproximator(
             #     step_size=0.3,
@@ -123,7 +123,7 @@ class Program():
             self.plotter.set_state_action_spaces(
                 self.env.observation_space.low, 
                 self.env.observation_space.high, 
-                h_line=0.0, v_line=-0.5)
+                h_line=0.0, v_line=0.0)
 
         #
         #   Logging

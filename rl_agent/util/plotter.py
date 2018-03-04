@@ -6,13 +6,14 @@ import pdb
 
 
 class Plotter():
-    def __init__(self, realtime_plotting, plot_every, disp_len, 
+    def __init__(self, realtime_plotting, plot_every, disp_len, nb_actions,
         figures, ax_qmax_wf, ax_qmax_im, ax_policy,
         ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_reward):
 
         self.realtime_plotting = realtime_plotting
         self.plot_every = plot_every
         self.disp_len = disp_len
+        self.nb_actions = nb_actions
 
         self.extent = None
         self.h_line = None
@@ -86,7 +87,8 @@ class Plotter():
 
             self.ax_trajectory.clear()
             plot_trajectory_2d(self.ax_trajectory, 
-                St_pos, St_vel, At, self.extent, h_line=self.h_line, v_line=self.v_line)
+                St_pos, St_vel, At, self.nb_actions, 
+                self.extent, h_line=self.h_line, v_line=self.v_line)
 
 
         if self.ax_memory is not None:
@@ -195,14 +197,15 @@ def plot_policy(ax, q_val, extent, h_line, v_line):
     x_space = np.linspace(x_min, x_max, x_size)
     y_space = np.linspace(y_min, y_max, y_size)
 
+    nb_actions = q_val.shape[-1]
+
     data_draw_x = []
     data_draw_y = []
-    data_a0_x = []
-    data_a0_y = []
-    data_a1_x = []
-    data_a1_y = []
-    data_a2_x = []
-    data_a2_y = []
+    data_act_x = []
+    data_act_y = []
+    for i in range(nb_actions):
+        data_act_x.append([])
+        data_act_y.append([])
 
     max_act = np.argmax(q_val, axis=2)
 
@@ -212,26 +215,31 @@ def plot_policy(ax, q_val, extent, h_line, v_line):
             x = x_space[xi]
             y = y_space[yi]
 
-            if q_val[xi, yi, 0] == q_val[xi, yi, 1] == -100.0:
+            all_equal = False
+            value = q_val[xi, yi, 0]
+            for i in range(1, nb_actions):
+                if q_val[xi, yi, i] != value:
+                    all_equal = False
+                    break
+
+            if all_equal:
                 data_draw_x.append(x)
                 data_draw_y.append(y)
-
-            elif max_act[xi, yi] == 0:
-                data_a0_x.append(x)
-                data_a0_y.append(y)
-            elif max_act[xi, yi] == 1:
-                data_a1_x.append(x)
-                data_a1_y.append(y)
-            elif max_act[xi, yi] == 2:
-                data_a2_x.append(x)
-                data_a2_y.append(y)
             else:
-                raise ValueError('bad')
+                action = max_act[xi, yi]
+                data_act_x[action].append(x)
+                data_act_y[action].append(y)
+
+    if nb_actions == 2:
+        colors = ('red', 'green')
+    elif nb_actions == 3:
+        colors = ('red', 'blue', 'green')
+    elif nb_actions == 5:
+        colors = ('red', 'orange', 'blue', 'cyan', 'darkgreen')
 
     ax.scatter(data_draw_x, data_draw_y, color='gray', marker='.')
-    ax.scatter(data_a0_x, data_a0_y, color='red', marker='.')
-    ax.scatter(data_a1_x, data_a1_y, color='blue', marker='.')
-    ax.scatter(data_a2_x, data_a2_y, color='green', marker='.')
+    for i in range(nb_actions):
+        ax.scatter(data_act_x[i], data_act_y[i], color=colors[i], marker='.', lw=0, s=30)
 
     ax.plot([x_min, x_max], [h_line, h_line], color='black')
     ax.plot([v_line, v_line], [y_min, y_max], color='black')
@@ -240,38 +248,36 @@ def plot_policy(ax, q_val, extent, h_line, v_line):
     ax.set_ylim([y_min, y_max])
 
 
-def plot_trajectory_2d(ax, x_arr, y_arr, act_arr, extent, h_line, v_line):
+def plot_trajectory_2d(ax, x_arr, y_arr, act_arr, nb_actions, extent, h_line, v_line):
     assert len(extent) == 4
 
     x_min, x_max, y_min, y_max = extent
 
-    data_a0_x = []
-    data_a0_y = []
-    data_a1_x = []
-    data_a1_y = []
-    data_a2_x = []
-    data_a2_y = []
+    data_act_x = []
+    data_act_y = []
+    for i in range(nb_actions):
+        data_act_x.append([])
+        data_act_y.append([])
 
     for i in range(len(x_arr)):
-        if act_arr[i] == 0:
-            data_a0_x.append(x_arr[i])
-            data_a0_y.append(y_arr[i])
-        elif act_arr[i] == 1:
-            data_a1_x.append(x_arr[i])
-            data_a1_y.append(y_arr[i])
-        elif act_arr[i] == 2:
-            data_a2_x.append(x_arr[i])
-            data_a2_y.append(y_arr[i])
-        elif act_arr[i] is None:
+        action = act_arr[i]
+
+        if action is None:
             # terminal state
             pass
         else:
-            print('act_arr[i] = ', act_arr[i])
-            raise ValueError('bad')
+            data_act_x[action].append(x_arr[i])
+            data_act_y[action].append(y_arr[i])
 
-    ax.scatter(data_a0_x, data_a0_y, color='red', marker=',', lw=0, s=1)
-    ax.scatter(data_a1_x, data_a1_y, color='blue', marker=',', lw=0, s=1)
-    ax.scatter(data_a2_x, data_a2_y, color='green', marker=',', lw=0, s=1)
+    if nb_actions == 2:
+        colors = ('red', 'green')
+    elif nb_actions == 3:
+        colors = ('red', 'blue', 'green')
+    elif nb_actions == 5:
+        colors = ('darkred', 'red', 'blue', 'green', 'darkgreen')
+
+    for i in range(nb_actions):
+        ax.scatter(data_act_x[i], data_act_y[i], color=colors[i], marker=',', lw=0, s=1)
 
     ax.plot([x_min, x_max], [h_line, h_line], color='black')
     ax.plot([v_line, v_line], [y_min, y_max], color='black')
