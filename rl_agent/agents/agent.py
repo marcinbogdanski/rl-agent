@@ -49,17 +49,13 @@ class Agent:
         state_space,
         action_space,
         discount,
-        expl_start,
-        nb_rand_steps,
-        e_rand_start,
-        e_rand_target,
-        e_rand_decay,
 
         mem_size_max,
         mem_batch_size,
         mem_enable_pmr,
 
-        q_fun_approx):
+        q_fun_approx,
+        policy):
 
         self._state_space = state_space
         self._action_space = action_space
@@ -67,22 +63,9 @@ class Agent:
         # usually gamma in literature
         self._discount = discount
 
-        # if set, first action in episode will always be random
-        self._expl_start = expl_start
-
-        # if true, exec random action until memory is full
-        self.nb_rand_steps = nb_rand_steps  
-
-        # policy parameter, 0 => always greedy
-        self._epsilon_random = e_rand_start
-        self._epsilon_random_start = e_rand_start
-        self._epsilon_random_target = e_rand_target
-        self._epsilon_random_decay = e_rand_decay
-
-        self._this_step_rand_act = False
 
         #
-        #   Initialise Q-function approximator
+        #   Initialize Q-function approximator
         #
         self.Q = q_fun_approx
         if self.Q is not None:
@@ -99,6 +82,27 @@ class Agent:
             initial_pmr_error=1000.0)
 
         self._mem_batch_size = mem_batch_size
+
+        #
+        #   Initialize Policy
+        #
+        self.policy = policy
+        self.policy.set_state_action_spaces(state_space, action_space)
+        self.policy.link(self)  # Policy may need access to Q-approx etc.
+
+        # if set, first action in episode will always be random
+        self._expl_start = self.policy._expl_start
+
+        # if true, exec random action until memory is full
+        self.nb_rand_steps = self.policy.nb_rand_steps  
+
+        # policy parameter, 0 => always greedy
+        self._epsilon_random = self.policy._epsilon_random
+        self._epsilon_random_start = self.policy._epsilon_random_start
+        self._epsilon_random_target = self.policy._epsilon_random_target
+        self._epsilon_random_decay = self.policy._epsilon_random_decay
+
+        self._this_step_rand_act = False
 
         
 

@@ -82,22 +82,23 @@ class Program():
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
             discount=0.99,
-            expl_start=False,
-            nb_rand_steps=0,
-            e_rand_start=0.0,
-            e_rand_target=0.0,
-            e_rand_decay=1/10000,
             mem_size_max=10000,
             mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=16,
-                init_val=0)
+                init_val=0),
             # q_fun_approx=rl.AggregateApproximator(
             #     step_size=0.3,
             #     bins=[64, 64],
-            #     init_val=0)
+            #     init_val=0),
+            policy=rl.QMaxPolicy(
+                expl_start=False,
+                nb_rand_steps=0,
+                e_rand_start=0.0,
+                e_rand_target=0.0,
+                e_rand_decay=1/10000)
             )
 
 

@@ -21,12 +21,11 @@ class Program():
 
         if agent.total_step % 1000 == 0:
             print()
-            print('total_step', agent.total_step,
-                'e_rand', agent._epsilon_random)
+            print('total_step', agent.total_step)
             print('EP', agent.completed_episodes, agent.get_avg_reward(50))
 
         if self.plotter is not None:
-            if agent.total_step >= agent.nb_rand_steps:
+            if agent.total_step >= agent.policy.nb_rand_steps:
                 res = self.plotter.conditional_plot(
                     self.logger, agent.total_step)
 
@@ -51,16 +50,6 @@ class Program():
             action_space=None,
             action_translator=None,
             reward_translator=None)
-        # self.env = rl.util.EnvTranslator(
-        #     env=gym.make('Pendulum-v0').env,
-        #     observation_space = gym.spaces.Box(
-        #         low=np.array([-np.pi, -1.0]), 
-        #         high=np.array([np.pi, 1.0])),
-        #     observation_translator = lambda st: 
-        #         np.array([np.arctan2(st[1] ,st[0]), st[2]/8]),
-        #     action_space=gym.spaces.Discrete(3),
-        #     action_translator=lambda at: np.array([(at-1.0)/3]),
-        #     reward_translator=None)
         self.env.seed(args.seed)
 
 
@@ -82,22 +71,24 @@ class Program():
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
             discount=0.99,
-            expl_start=False,
-            nb_rand_steps=0,
-            e_rand_start=1.0,
-            e_rand_target=0.1,
-            e_rand_decay=1/10000,
+            
             mem_size_max=10000,
             mem_batch_size=64,
             mem_enable_pmr=False,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=8,
-                init_val=0)
+                init_val=0),
             # q_fun_approx=rl.AggregateApproximator(
             #     step_size=0.3,
             #     bins=[64, 64],
-            #     init_val=0)
+            #     init_val=0),
+            policy=rl.QMaxPolicy(
+                expl_start=False,
+                nb_rand_steps=0,
+                e_rand_start=1.0,
+                e_rand_target=0.1,
+                e_rand_decay=1/10000)
             )
 
 
