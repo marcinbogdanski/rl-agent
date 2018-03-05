@@ -16,21 +16,33 @@ class Program():
         self.plotter = None
 
     def on_step_end(self, agent, reward, observation, done, action):
+        """This is callback executed at step end.action
+
+        Example:
+            # time step t begins
+            obs, reward, done = env.step(previous_action)
+            action = agent.take_action(obs)
+            on_step_end(reward, observation, done, action)
+            # time step t ends
+        """
 
         self.env.render()
 
+        # Print to console
         if agent.total_step % 1000 == 0:
             print()
             print('total_step', agent.total_step)
-            print('EP', agent.completed_episodes, agent.get_avg_ap_reward(50))
+            print('EP', agent.completed_episodes, agent.get_avg_ep_reward(50))
+            if done:
+                print('espiode finished after iteration', agent.step)
 
+        # Plot stuff
         if self.plotter is not None:
             if agent.total_step >= agent.start_learning_at:
                 res = self.plotter.conditional_plot(
                     self.logger, agent.total_step)
 
-        if done:
-            print('espiode finished after iteration', agent.step)
+
 
 
 
@@ -43,13 +55,11 @@ class Program():
         #
         #   Environment
         #
-        self.env = rl.util.EnvTranslator(
-            env=gym.make('MountainCar-v0').env,
-            observation_space=None,
-            observation_translator=None,
-            action_space=None,
-            action_translator=None,
-            reward_translator=None)
+        # .env at the end removes time limit, see:
+        # https://stackoverflow.com/questions/42787924/
+        # why-is-episode-done-after-200-time-steps-gym-environment-mountaincar
+        self.env = gym.make('MountainCar-v0').env
+            
         self.env.seed(args.seed)
 
 
@@ -96,6 +106,7 @@ class Program():
         #
         #   Plotting
         #
+        # Need to re-think how plotting works
         if args.plot:
             fig1 = plt.figure()
             #fig2 = plt.figure()
@@ -144,8 +155,11 @@ class Program():
         #   Runner
         #
         try:
-            rl.train_agent(env=self.env, agent=agent, 
-                total_steps=1000000, target_avg_reward=-200)
+            rl.train_agent(
+                env=self.env,
+                agent=agent, 
+                total_steps=1000000,
+                target_avg_reward=-200)
         finally:
             if args.logfile is not None:
                 logger.save(args.logfile)

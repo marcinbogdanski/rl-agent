@@ -9,6 +9,11 @@ import gym
 import rl_agent as rl
 
 class TestAgent(unittest.TestCase):
+    """Couple unit tests for:
+        * Agent with memory-replay and DQN implemented in keras
+        * Simple agent with tiles based approximator
+        * Simple agent with aggregate approximator
+    """
 
     def setUp(self):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
@@ -26,11 +31,11 @@ class TestAgent(unittest.TestCase):
         #
         #   TF session
         #
+        # Make TF single-threaded
         config = tf.ConfigProto()    
         config.intra_op_parallelism_threads=1
         config.inter_op_parallelism_threads=1
 
-        config.gpu_options.per_process_gpu_memory_fraction=0.2
         self.sess = tf.Session(config=config)
 
         
@@ -39,14 +44,18 @@ class TestAgent(unittest.TestCase):
 
     def test_10_run_keras_1(self):
         def on_step_end(agent, reward, observation, done, action):
+            """Callback to print stuff to console"""
             if agent.total_step % 1000 == 0:
                 print('test_10_run_keras_1', agent.total_step)
             if done:
                 print('episode terminated at', agent.total_step)
 
-        env = gym.make('MountainCar-v0').env
+        env = gym.make('MountainCar-v0').env  # .env to remove 200 step limit
         env.seed(self.seed)
 
+        #
+        #   Keras DQN model
+        #
         q_model = tf.keras.models.Sequential()
         q_model.add(tf.keras.layers.Dense(units=256, activation='relu', input_dim=2))
         q_model.add(tf.keras.layers.Dense(units=256, activation='relu'))
@@ -54,6 +63,7 @@ class TestAgent(unittest.TestCase):
         q_model.compile(loss='mse', 
             optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
+        # Configure agent
         agent = rl.Agent(
             state_space=env.observation_space,
             action_space=env.action_space,
@@ -72,8 +82,10 @@ class TestAgent(unittest.TestCase):
 
         agent.register_callback('on_step_end', on_step_end)
 
+        # Main train loop
         rl.train_agent(env=env, agent=agent, total_steps=23000)
 
+        # This is used to test for any numerical discrepancy between runs
         fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
@@ -119,6 +131,7 @@ class TestAgent(unittest.TestCase):
 
         rl.train_agent(env=env, agent=agent, total_steps=5000)
 
+        # This is used to test for any numerical discrepancy between runs
         fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)
@@ -165,6 +178,7 @@ class TestAgent(unittest.TestCase):
 
         rl.train_agent(env=env, agent=agent, total_steps=30000)
 
+        # This is used to test for any numerical discrepancy between runs
         fp, ws, st, act, rew, done = agent.get_fingerprint()
         print('FINGERPRINT:', fp)
         print('  wegight sum:', ws)

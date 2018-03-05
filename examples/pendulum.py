@@ -16,21 +16,33 @@ class Program():
         self.plotter = None
 
     def on_step_end(self, agent, reward, observation, done, action):
+        """This is callback executed at step end.action
+
+        Example:
+            # time step t begins
+            obs, reward, done = env.step(previous_action)
+            action = agent.take_action(obs)
+            on_step_end(reward, observation, done, action)
+            # time step t ends
+        """
 
         self.env.render()
 
+        # Print to console
         if agent.total_step % 1000 == 0:
             print()
             print('total_step', agent.total_step)
             print('EP', agent.completed_episodes, agent.get_cont_reward(1000))
+            if done:
+                print('espiode finished after iteration', agent.step)   
 
+        # Plot stuff
         if self.plotter is not None:
             if agent.total_step >= agent.start_learning_at:
                 res = self.plotter.conditional_plot(
                     self.logger, agent.total_step)
 
-        if done:
-            print('espiode finished after iteration', agent.step)
+        
 
 
 
@@ -44,13 +56,25 @@ class Program():
         #
         #   Environment
         #
+        # Environment outputs 3-tuple: cos(ang), sin(ang), angular-velocity
+        # we translate that to 2-tuple: angle [-pi, pi], ang-vel [-8.0, 8.0]
+        # so we can plot 2d action space nicely
+        #
+        # Environment expect continous 1-tuple action representing torque
+        # in range [-2.0, 2.0], but our agent outputs categorical action 0-4
+        # so we need to tranlate that to torque
+        # this is becouse continous actions are not implemented yet 
         def obs_trans(obs):
+            """Translate from 3d obs space to 2d (for easier plotting)"""
             theta = np.arctan2(obs[1], obs[0])
             vel = obs[2]
             return np.array([theta, vel])
+
         def act_trans(act):
+            """Translate from categorical actions to continous"""
             torques = [-2.0, -0.5, 0.0, 0.5, 2.0]
             return np.array([torques[act]])
+
         self.env = rl.util.EnvTranslator(
             env=gym.make('Pendulum-v0'),
             observation_space=gym.spaces.Box(
@@ -60,18 +84,9 @@ class Program():
             action_space=gym.spaces.Discrete(5),
             action_translator=act_trans,
             reward_translator=None)
+
         self.env.seed(args.seed)
 
-
-        #
-        #   Model
-        #
-        q_model = tf.keras.models.Sequential()
-        q_model.add(tf.keras.layers.Dense(256, 'relu', input_dim=2))
-        q_model.add(tf.keras.layers.Dense(256, 'relu'))
-        q_model.add(tf.keras.layers.Dense(3, 'linear'))
-        q_model.compile(loss='mse', 
-            optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
 
         #
@@ -89,10 +104,6 @@ class Program():
                 step_size=0.3,
                 num_tillings=16,
                 init_val=0),
-            # q_fun_approx=rl.AggregateApproximator(
-            #     step_size=0.3,
-            #     bins=[64, 64],
-            #     init_val=0),
             policy=rl.QMaxPolicy(
                 expl_start=False,
                 nb_rand_steps=0,
@@ -105,11 +116,13 @@ class Program():
         #
         #   Plotting
         #
+        # Need to re-think how plotting works
         if args.plot:
             fig1 = plt.figure()
-            #fig2 = plt.figure()
             self.plotter = rl.util.Plotter(
-                realtime_plotting=True, plot_every=1000, disp_len=1000,
+                realtime_plotting=True,
+                plot_every=1000,
+                disp_len=1000,
                 nb_actions=self.env.action_space.n,
                 figures=(fig1, ),
                 ax_qmax_wf=fig1.add_subplot(2,4,1, projection='3d'),
@@ -117,7 +130,7 @@ class Program():
                 ax_policy=fig1.add_subplot(2,4,3),
                 ax_trajectory=fig1.add_subplot(2,4,4),
                 ax_stats=None,
-                ax_memory=None, #fig2.add_subplot(1,1,1),
+                ax_memory=None,
                 ax_q_series=None,
                 ax_reward=fig1.add_subplot(2,1,2),
             )
@@ -146,15 +159,21 @@ class Program():
             agent.Q.install_logger(
                 self.logger.q_val, log_every=1000, samples=(64, 64))
 
-            agent.register_callback('on_step_end', self.on_step_end)
+        #
+        #   Callback
+        #
+        agent.register_callback('on_step_end', self.on_step_end)
 
         
         #
         #   Runner
         #
         try:
-            rl.train_agent(env=self.env, agent=agent, 
-                total_steps=1000000, target_avg_reward=-200)
+            rl.train_agent(
+                env=self.env,
+                agent=agent, 
+                total_steps=1000000,
+                target_avg_reward=-200)
         finally:
             if args.logfile is not None:
                 logger.save(args.logfile)

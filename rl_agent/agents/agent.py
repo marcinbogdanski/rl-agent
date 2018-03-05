@@ -16,7 +16,7 @@ def _rand_argmax(vector):
 
 
 class HistoryData:
-    """One piece of agent trajectory"""
+    """One piece of agent trajectory (obs, rew, act, done)"""
     def __init__(self, total_step, observation, reward, done):
         assert isinstance(total_step, int)
         assert total_step >= 0

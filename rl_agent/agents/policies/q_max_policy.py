@@ -24,7 +24,7 @@ class QMaxPolicy:
 
         self._state_space = None
         self._action_space = None
-        self._q_approximator = None
+        self._q_approx = None
 
     def set_state_action_spaces(self, state_space, action_space):
         # These should be relaxed in the future,
@@ -38,9 +38,10 @@ class QMaxPolicy:
         self._action_space = action_space
 
     def link(self, agent):
-        self._q_approximator = agent.Q
+        self._q_approx = agent.Q
 
     def reset(self):
+        """Reset at the end of episode"""
         self._force_random_action = self._expl_start
 
     def next_step(self, total_step):
@@ -61,7 +62,7 @@ class QMaxPolicy:
     def pick_action(self, state):
         assert self._state_space is not None
         assert self._action_space is not None
-        assert self._q_approximator is not None
+        assert self._q_approx is not None
         assert self._state_space.contains(state)
 
         if self._curr_total_step < self._nb_rand_steps:
@@ -92,7 +93,10 @@ class QMaxPolicy:
                 return np.random.choice(indices)
 
             obs = np.array([state])
-            q_arr = self._q_approximator.estimate_all(obs).flatten()
+            q_arr = self._q_approx.estimate_all(obs).flatten()
             res = rand_argmax(q_arr)
 
         return res
+
+    def train(self):
+        pass
