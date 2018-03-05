@@ -34,7 +34,7 @@ def train_agent(env, agent, total_steps, target_avg_reward=None):
             break
 
         if target_avg_reward is not None:
-            avg_reward = agent.get_avg_reward(50)
+            avg_reward = agent.get_avg_ep_reward(50)
             if avg_reward is not None and avg_reward > target_avg_reward:
                 break
 

@@ -2,8 +2,6 @@ import numpy as np
 import tensorflow as tf
 
 from . import memory
-from .approximators import AggregateApproximator
-from .approximators import TilesApproximator
 from .approximators import KerasApproximator
 
 
@@ -49,6 +47,7 @@ class Agent:
         state_space,
         action_space,
         discount,
+        start_learning_at,
 
         mem_size_max,
         mem_batch_size,
@@ -62,6 +61,7 @@ class Agent:
 
         # usually gamma in literature
         self._discount = discount
+        self._start_learning_at = start_learning_at
 
 
         #
@@ -114,6 +114,9 @@ class Agent:
         self.log_episodes = None
         self.log_hist = None
 
+    @property
+    def start_learning_at(self):
+        return self._start_learning_at
 
     @property
     def step(self):
@@ -138,13 +141,20 @@ class Agent:
                 self._debug_cum_action, self._debug_cum_reward, \
                 self._debug_cum_done
 
-    def get_avg_reward(self, nb_episodes):
+    def get_avg_ep_reward(self, nb_episodes):
         hist_chunk = self._episodes_history[-nb_episodes:]
         if len(hist_chunk) == 0:
             return None
         else:
             sum_ = sum(ep_hist.total_reward for ep_hist in hist_chunk)
             return sum_ / len(hist_chunk)
+
+    def get_cont_reward(self, nb_steps):
+        if len(self._trajectory) <= nb_steps:
+            return None
+
+        hist_chunk = self._trajectory[-nb_steps:]
+        return sum(x.reward for x in hist_chunk if x.reward)
 
     def reset(self):
         if len(self._trajectory) > 0:
@@ -250,17 +260,13 @@ class Agent:
         if self._trajectory[-1].done is True:
             return None
         else:
-            action = self.policy.pick_action(obs,
-                                            self.completed_episodes,
-                                            self._curr_step,
-                                            self._curr_total_step)
+            action = self.policy.pick_action(obs)
             self._append_action(action)
             return action
 
 
     def _append_action(self, action):
         assert len(self._trajectory) != 0
-
         self._debug_cum_action += np.sum(action)
         self._trajectory[-1].action = action
 
@@ -275,7 +281,6 @@ class Agent:
 
         self._trajectory.append(
             HistoryData(self._curr_total_step, observation, reward, done))
-
 
 
     def print_trajectory(self):
@@ -326,7 +331,7 @@ class Agent:
         done = self._trajectory[t+1].done
         self.memory.append(St, At, Rt_1, St_1, done)
 
-        if self._curr_total_step < self.policy.nb_rand_steps:
+        if self._curr_total_step < self._start_learning_at:
             # no lerninng during initial random phase
             return
 
@@ -365,10 +370,7 @@ class Agent:
                 At_1 = self._trajectory[t+1].action
                 if At_1 is None:
                     # TODO: should this be St, or St_1 !?!
-                    At_1 = self.policy.pick_action(St,
-                                                   self.completed_episodes,
-                                                   self._curr_step,
-                                                   self._curr_total_step)
+                    At_1 = self.policy.pick_action(St)
                 Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
             self.Q.train(St, At, Tt)

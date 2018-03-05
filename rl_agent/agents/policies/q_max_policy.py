@@ -11,6 +11,9 @@ class QMaxPolicy:
         # if true, exec random action until memory is full
         self._nb_rand_steps = nb_rand_steps  
 
+        # counts all steps through whole history of time
+        self._curr_total_step = 0
+
         # policy parameter, 0 => always greedy
         self._epsilon_random = e_rand_start
         self._epsilon_random_start = e_rand_start
@@ -22,10 +25,6 @@ class QMaxPolicy:
         self._state_space = None
         self._action_space = None
         self._q_approximator = None
-
-    @property
-    def nb_rand_steps(self):
-        return self._nb_rand_steps
 
     def set_state_action_spaces(self, state_space, action_space):
         # These should be relaxed in the future,
@@ -47,8 +46,9 @@ class QMaxPolicy:
     def next_step(self, total_step):
         # TODO: remove this method?
         # calc _epsilon_random directly from total_step in pick action
+        self._curr_total_step = total_step
 
-        if total_step > self.nb_rand_steps:
+        if total_step > self._nb_rand_steps:
 
             #
             #   Decrease linearly
@@ -58,13 +58,13 @@ class QMaxPolicy:
             if self._epsilon_random < self._epsilon_random_target:
                 self._epsilon_random = self._epsilon_random_target
 
-    def pick_action(self, state, episode, step, total_step):
+    def pick_action(self, state):
         assert self._state_space is not None
         assert self._action_space is not None
         assert self._q_approximator is not None
         assert self._state_space.contains(state)
 
-        if total_step < self._nb_rand_steps:
+        if self._curr_total_step < self._nb_rand_steps:
             self._this_step_rand_act = True
             return np.random.choice(range(self._action_space.n))
             #return self._action_space.sample()

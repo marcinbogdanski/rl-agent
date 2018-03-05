@@ -119,6 +119,9 @@ class Plotter():
         if self.ax_reward is not None:
             self.ax_reward.clear()
 
+            #
+            #   Average episodic reward
+            #
             epsumm_end = logger.epsumm.data['end']    # list of ints
             epsumm_rew = logger.epsumm.data['reward'] # list of floats
 

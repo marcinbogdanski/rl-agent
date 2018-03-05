@@ -21,12 +21,11 @@ class Program():
 
         if agent.total_step % 1000 == 0:
             print()
-            print('total_step', agent.total_step,
-                'e_rand', agent._epsilon_random)
-            print('EP', agent.completed_episodes, agent.get_avg_reward(50))
+            print('total_step', agent.total_step)
+            print('EP', agent.completed_episodes, agent.get_cont_reward(1000))
 
         if self.plotter is not None:
-            if agent.total_step >= agent.nb_rand_steps:
+            if agent.total_step >= agent.start_learning_at:
                 res = self.plotter.conditional_plot(
                     self.logger, agent.total_step)
 
@@ -82,6 +81,7 @@ class Program():
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
             discount=0.99,
+            start_learning_at=0,
             mem_size_max=10000,
             mem_batch_size=64,
             mem_enable_pmr=False,
