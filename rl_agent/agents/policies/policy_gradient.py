@@ -2,6 +2,7 @@ import numpy as np
 
 class VanillaPolicyGrad:
     def __init__(self):
+        """Under construction"""
         self._state_space = None
         self._action_space = None
         self._v_approx = None

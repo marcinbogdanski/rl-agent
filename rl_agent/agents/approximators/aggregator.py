@@ -9,6 +9,15 @@ import pdb
 class AggregateApproximator(BaseApproximator):
 
     def __init__(self, step_size, bins, init_val):
+        """Bin-bucket state aggregator, works like histogram
+
+        See base class documentation for method descriptions
+        
+        Args:
+            step_size: learning rate
+            bins (array): number of bins for each state space dimension
+            init_val: initial value for buckets
+        """
         assert isinstance(bins, list) or isinstance(bins, tuple)
         super().__init__()
 

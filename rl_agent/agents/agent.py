@@ -9,7 +9,7 @@ import pdb
 
 
 def _rand_argmax(vector):
-    """ Argmax that chooses randomly among eligible maximum indices. """
+    """Argmax that chooses randomly among eligible maximum indices. """
     vmax = np.max(vector)
     indices = np.nonzero(vector == vmax)[0]
     return np.random.choice(indices)
@@ -43,26 +43,68 @@ class EpisodeData:
 
 
 class Agent:
+    """Generic RL Agent class.
+
+    Can be configured in various ways to match different learning algorithms.
+
+    Timestep convention matches Sutton & Barto 2018:
+        *** time step starts ***
+        1) either reset env, or perform env.step(action_form_previous_step)
+        2) feed obs, reward and done flat to Agent for learning
+        3) do Agent.take_action() to select action for next time step
+        4) do housekeeping, logging, callbacks etc.
+        *** time step ends ***
+
+    Abbreviated example of Agent training loop:
+        agent.reset()  # optional, in case agent has non-terminated trajectory
+        done = True
+        while True:
+            # *** time step starts here ***
+            if done:                           # reset or step the environment
+                obs, reward, done = env.reset(), None, False
+            else:
+                obs, reward, done, _ = env.step(action)
+            agent.observe(obs, reward, done)   # save to internal trajectory
+            agent.learn()                      # learn from internal trajectory
+            action = agent.take_action(obs)    # pick act and save internally
+            agent.next_step()                  # inform agent step is over
+            # *** time step ends here ***
+            if agent.total_step > train_steps: # check stop conditions
+                break
+
+    For more complete example see rl_agent.runner.train_agent() function
+    """
+
     def __init__(self,
         state_space,
         action_space,
         discount,
         start_learning_at,
 
-        mem_size_max,
-        mem_batch_size,
-        mem_enable_pmr,
-
+        memory,
         q_fun_approx,
         policy):
+        """
+        Params:
+            state_space: gym.spaces object describing state space
+            action_space: gym.spaces object describing action space
+            discount: per-step reward discount, usually gamma in literature
+            start_learning_at: postpone any learning until this time step,
+                               use e.g. to pre-fill replay memory with random
+        """
 
         self._state_space = state_space
         self._action_space = action_space
-
-        # usually gamma in literature
-        self._discount = discount
+        self._discount = discount  # usually gamma in literature
         self._start_learning_at = start_learning_at
 
+
+        #
+        #   Initialise Memory Module
+        #
+        self.memory = memory
+        if memory is not None:
+            self.memory.set_state_action_spaces(state_space, action_space)
 
         #
         #   Initialize Q-function approximator
@@ -71,48 +113,46 @@ class Agent:
         if self.Q is not None:
             self.Q.set_state_action_spaces(state_space, action_space)
 
-        #
-        #   Initialise Memory
-        #
-        self.memory = memory.Memory(
-            state_space=state_space,
-            action_space=action_space,
-            max_len=mem_size_max,
-            enable_pmr=mem_enable_pmr,
-            initial_pmr_error=1000.0)
-
-        self._mem_batch_size = mem_batch_size
 
         #
-        #   Initialize Policy
+        #   Initialize Policy Module
         #
         self.policy = policy
         self.policy.set_state_action_spaces(state_space, action_space)
         self.policy.link(self)  # Policy may need access to Q-approx etc.
 
 
-        self._this_step_rand_act = False
-
         
-
+        #
+        #   Housekeeping
+        #
+        self._curr_total_step = 0
         self._completed_episodes = 0
-
-        self._callback_on_step_end = None
-        self._callback_on_step_end_params = None
-        
         self._episodes_history = []
         self._trajectory = []
         self.reset()
 
-        self._curr_total_step = 0
+        #
+        #   Callbacks
+        #
+        self._callback_on_step_end = None
+        self._callback_on_step_end_params = None
 
+        #
+        #   Loggers
+        #
+        self.log_episodes = None  # per-episode logger (episode summary)
+        self.log_hist = None      # per-step logger (saves all states visited)
+        
+        #
+        #   Debug stuff for unittests
+        #        
         self._debug_cum_state = 0
         self._debug_cum_action = 0
         self._debug_cum_reward = 0
         self._debug_cum_done = 0
 
-        self.log_episodes = None
-        self.log_hist = None
+        
 
     @property
     def start_learning_at(self):
@@ -131,6 +171,7 @@ class Agent:
         return self._completed_episodes
 
     def get_fingerprint(self):
+        """Unique nb that should not change between reproducible sessions"""
         weights_sum = self.Q.get_weights_fingerprint()
 
         fingerprint = weights_sum + self._debug_cum_state \
@@ -142,6 +183,7 @@ class Agent:
                 self._debug_cum_done
 
     def get_avg_ep_reward(self, nb_episodes):
+        """Average reward over last nb_episodes episodes"""
         hist_chunk = self._episodes_history[-nb_episodes:]
         if len(hist_chunk) == 0:
             return None
@@ -150,6 +192,7 @@ class Agent:
             return sum_ / len(hist_chunk)
 
     def get_cont_reward(self, nb_steps):
+        """Average reward over last nb_steps steps"""
         if len(self._trajectory) <= nb_steps:
             return None
 
@@ -157,6 +200,7 @@ class Agent:
         return sum(x.reward for x in hist_chunk if x.reward)
 
     def reset(self):
+        """Reset after episode completed. Can be called manually if required"""
         if len(self._trajectory) > 0:
             # save summary into episode history
             ep_start = self._trajectory[0].total_step
@@ -184,6 +228,7 @@ class Agent:
         self.policy.reset()
 
     def log(self, episode, step, total_step):
+        """Log internal stuff, call log() on all configured modules"""
         
         #
         #   Log episodes
@@ -213,12 +258,27 @@ class Agent:
                 At=self._trajectory[-1].action,
                 done=self._trajectory[-1].done)
 
-        self.memory.log(episode, step, total_step)
-        self.Q.log(episode, step, total_step)
+        #
+        #   Log internal modules
+        #
+        if self.memory is not None:
+            self.memory.log(episode, step, total_step)
+
+        if self.Q is not None:
+            self.Q.log(episode, step, total_step)
 
 
     def register_callback(self, which, function):
+        """Register one of the callbacks.
 
+        Currently only one callback can be registered.
+
+        Args:
+            which (str): Currently supported callbacks are:
+                'on_step_end' - called last thing before rolling into next step
+            function: user supplied function to call, signature must be:
+                def my_fun(self, agent, reward, observation, done, action):
+        """
         if which == 'on_step_end':
             if self._callback_on_step_end is not None:
                 raise ValueError('callback {} already registered')
@@ -227,6 +287,7 @@ class Agent:
             raise ValueError('unknown callback routine' + which)
 
     def clear_callback(self, which):
+        """Remove callback"""
         if which == 'on_step_end':
             self._callback_on_step_end = None
         else:
@@ -234,6 +295,7 @@ class Agent:
 
 
     def next_step(self, done):
+        """Call to indicate time-step is over so agent can do housekeeping"""
 
         self.log(self.completed_episodes, self.step, self.total_step)
 
@@ -257,6 +319,14 @@ class Agent:
  
 
     def take_action(self, obs):
+        """Pick action save it to trajectory. See agent doc for call order.
+
+        If you want to pick action w/o saving into trajectory,
+        call agent.policy.pick_action() directly
+
+        Params:
+            obs - observation as returned from environment
+        """
         if self._trajectory[-1].done is True:
             return None
         else:
@@ -266,12 +336,20 @@ class Agent:
 
 
     def _append_action(self, action):
+        """This will append action to last-step in trajectory"""
         assert len(self._trajectory) != 0
         self._debug_cum_action += np.sum(action)
         self._trajectory[-1].action = action
 
 
     def observe(self, observation, reward, done):
+        """Feed env data into agent. See Agent doc for call order.
+
+        Args:
+            observation: obs as returned from environment
+            reward: reward as returned from env
+            done: done flag as returned from env
+        """
         self._debug_cum_state += np.sum(observation)
 
         if reward is not None:
@@ -290,22 +368,17 @@ class Agent:
         print('Total trajectory steps: {0}'.format(len(self._trajectory)))
 
 
-    def check_trajectory_terminated_ok(self):
-        last_entry = self._trajectory[-1]
-        if not last_entry.done:
-            raise ValueError('Cant do offline on non-terminated episode')
-
-
     def learn(self):
-        self.eval_td_online()
+        """Perform learning. See Agent doc for call order."""
+        self._eval_td_online()
 
 
-    def eval_td_online(self):
+    def _eval_td_online(self):
         if len(self._trajectory) >= 2:
-            self.eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
+            self._eval_td_t(len(self._trajectory) - 2)  # Eval next-to last state
 
 
-    def eval_td_t(self, t):
+    def _eval_td_t(self, t):
         """TD update state-value for single state in trajectory
 
         This assumesss time step t+1 is availalbe in the trajectory
@@ -329,7 +402,9 @@ class Agent:
         St_1 = self._trajectory[t+1].observation  # next state tuple (x, y)
         Rt_1 = self._trajectory[t+1].reward       # next step reward
         done = self._trajectory[t+1].done
-        self.memory.append(St, At, Rt_1, St_1, done)
+
+        if self.memory is not None:
+            self.memory.append(St, At, Rt_1, St_1, done)
 
         if self._curr_total_step < self._start_learning_at:
             # no lerninng during initial random phase
@@ -344,7 +419,7 @@ class Agent:
 
             # Get batch
             states, actions, rewards_1, states_1, dones, indices = \
-                self.memory.get_batch(self._mem_batch_size)
+                self.memory.get_batch()
             
             # Calculates max_Q for next states
             q_max = self.Q.max_op(states_1)

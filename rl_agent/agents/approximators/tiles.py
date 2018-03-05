@@ -6,8 +6,20 @@ import gym
 import pdb
 
 class TilesApproximator(BaseApproximator):
-
     def __init__(self, step_size, num_tillings, init_val):
+        """Use tilings as state features with linear approximator
+
+        See Sutton and Barto 2018 chap 9.5 Feature Construction for details
+
+        See base class documentation for method descriptions
+        
+        Args:
+            step_size: learning rate
+            num_tillings: must be power of 2,
+                must be greater or equal to four times num dimensions
+            init_val: initial value for tilings, should be higher than
+                maximum possible return to enable optimistic exploration
+        """
         super().__init__()
 
         def is_power_of_2(num):

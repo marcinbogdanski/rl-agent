@@ -8,21 +8,35 @@ class Memory:
     """Circular buffer for DQN memory reply."""
 
     def __init__(self,
-                 state_space,
-                 action_space, 
                  max_len,
+                 batch_size,
                  enable_pmr=False,
                  initial_pmr_error=1000.0):
         """
         Args:
-            state_space: gym.spaces.Box (tested) or Discrete (not tested)
-            action_space: gym.spaces.Box (not tested) or Discrete (tested)
             max_len: maximum capacity
             enable_pmr: if True, enable Marcins version of PMR
             initial_pmr_error: error for new samples, should be order of
                 magnitude larger than max error during normal operation
         """
+        assert isinstance(max_len, int)
+        assert max_len > 0
 
+        self._max_len = max_len
+        self._batch_size = batch_size
+        self._enable_pmr = enable_pmr
+        self._initial_pmr_error = initial_pmr_error
+
+        self._curr_insert_ptr = 0
+        self._curr_len = 0
+
+    def set_state_action_spaces(self, state_space, action_space):
+        """Set state/action space descriptors
+        Params:
+            state_space: gym.spaces.Box (tested) or Discrete (not tested)
+            action_space: gym.spaces.Box (not tested) or Discrete (tested)
+        """
+            
         # These should be relaxed in the future to support more spaces,
         # possibly remove gym dependancy
         if not isinstance(state_space, gym.spaces.Box):
@@ -34,24 +48,18 @@ class Memory:
         assert state_space.dtype is not None
         assert action_space.shape is not None
         assert action_space.shape is not None
-        assert isinstance(max_len, int)
-        assert max_len > 0
 
         self._state_space = state_space
         self._action_space = action_space
 
-        self._max_len = max_len
-        self._enable_pmr = enable_pmr
-        self._initial_pmr_error = initial_pmr_error
-        self._curr_insert_ptr = 0
-        self._curr_len = 0
+        
 
-        St_shape = [max_len] + list(state_space.shape)
-        At_shape = [max_len] + list(action_space.shape)
-        Rt_1_shape = [max_len]
-        St_1_shape = [max_len] + list(state_space.shape)
-        done_shape = [max_len]
-        error_shape = [max_len]
+        St_shape = [self._max_len] + list(state_space.shape)
+        At_shape = [self._max_len] + list(action_space.shape)
+        Rt_1_shape = [self._max_len]
+        St_1_shape = [self._max_len] + list(state_space.shape)
+        done_shape = [self._max_len]
+        error_shape = [self._max_len]
 
         self._hist_St = np.zeros(St_shape, dtype=state_space.dtype)
         self._hist_At = np.zeros(At_shape, dtype=action_space.dtype)
@@ -63,6 +71,7 @@ class Memory:
         self._log_every = None
         self._log_mem = None
 
+
     def append(self, St, At, Rt_1, St_1, done):
         """Add one sample to memory, override oldest if max_len reached.
 
@@ -73,6 +82,8 @@ class Memory:
             St_1 - next state
             done - True if episode completed
         """
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert self._state_space.contains(St)
         assert self._action_space.contains(At)
         assert self._state_space.contains(St_1)
@@ -121,19 +132,25 @@ class Memory:
         """Number of samples in memory, 0 <= length <= max_len"""
         return self._curr_len
 
-    def get_batch(self, batch_len):
+    def get_batch(self, batch_len=None):
         """Sample batch of data, with repetition
 
         Args:
-            batch_len: nb of samples to pick
+            batch_len: nb of samples to pick,
+                       defaults to value passed in constructor
 
         Returns:
             states, actions, rewards, next_states, done, indices
             Each returned element is np.ndarray with length == batch_len
             Last element 'indices' can be passed back update_errors() method
         """
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert self._curr_len > 0
-        assert batch_len > 0
+        assert batch_len is None or batch_len > 0
+
+        if batch_len is None:
+            batch_len = self._batch_size
 
         if not self._enable_pmr:
             # np.random.randint much faster than np.random.sample (?)
@@ -167,6 +184,8 @@ class Memory:
             ... # but do NOT modify memory in any way
             memory.update_errors(indices, np.abs(errors))
         """
+        assert self._state_space is not None
+        assert self._action_space is not None
         assert isinstance(indices, np.ndarray)
         assert indices.ndim == 1
         assert len(indices) > 0

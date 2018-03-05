@@ -3,20 +3,49 @@ import pdb
 
 class BaseApproximator:
     def __init__(self):
+        """Base class for all aproximators
+
+        Currently tested on continous 2d state spaces with categorical actions
+        """
         self._logger = None
         self._log_every = None
         self._log_samples = None
 
     def set_state_action_spaces(self, state_space, action_space):
+        """Set state/action space descriptors
+        Params:
+            state_space: gym.spaces.Box (tested) or Discrete (not tested)
+            action_space: gym.spaces.Box (not tested) or Discrete (tested)
+        """
         raise NotImplemented()
 
     def get_weights_fingerprint(self):
+        """Unique numer representing this object, e.g. sum of weights"""
         raise NotImplemented()
 
     def estimate(self, state, action):
+        """Estimate single state/action pair
+
+        Args:
+            state - state as provided by environment
+            action - as required by environment
+
+        Returns:
+            float: Q-Value for that state/action pair
+        """
         raise NotImplemented()
 
     def train(self, states, actions, targets):
+        """Train approximator to be closer to targets
+
+        Args:
+            states: array of states, states[0..n] must be a valid state
+            actions: array of actions, actions[0..n] must be a valid action
+            targets: array of floats
+
+        Returns:
+            None
+        """
         raise NotImplemented()
 
     def install_logger(self, logger, log_every, samples):

@@ -3,12 +3,39 @@ import matplotlib.pyplot as plt
 
 import pdb
 
-
+# TODO: think if this is correct architecture, how to improve?
+# TODO: improve documentaiton
+# TODO: add more assert statements all around
 
 class Plotter():
     def __init__(self, realtime_plotting, plot_every, disp_len, nb_actions,
         figures, ax_qmax_wf, ax_qmax_im, ax_policy,
         ax_trajectory, ax_stats, ax_memory, ax_q_series, ax_reward):
+        """Used for plotting stuff. Uses Logger logs to get data.
+
+        This is tightly integrated with how Logger works, this should be changed
+        in the future to allow more flexibility.
+    
+        This class is probably going to be changed a lot in the future
+
+        IMPORTANT:
+        All Q-plots assume 2D continous state space with categorical actions.
+
+        Params:
+            realtime_plotting: plot as data comes in, TODO: assume always yes?
+            plot_every (int): plot every t time steps, skip otherwise
+            disp_len: how many most recent time steps to plot
+            nb_actions: required for policy plot, TODO: remove
+            figures: pass list of all figures to refresh after plotting is done
+            ax_qmax_wf: 3d wireframe plot for Q-max, assumed projection='3d'
+            ax_qmax_im: 2d plot for Q-max
+            ax_policy: plot policy, colors corresponding to different actions
+            ax_trajectory: agent trajectory over last disp_len steps
+            ax_stats: not used at the moment?
+            ax_memory: full memory dump for DQN agents
+            ax_q_series: not used
+            ax_reward: cumulative reward for each episode
+        """
 
         self.realtime_plotting = realtime_plotting
         self.plot_every = plot_every
@@ -31,12 +58,21 @@ class Plotter():
         self.ax_reward = ax_reward
 
     def set_state_action_spaces(self, low, high, h_line, v_line):
+        """Set state-space range
+
+        Params:
+            low (array): low values for each state-space dimension
+            high (array): high values for state-space
+            h_line: draw extra horizontal line on plots
+            v_line: draw extra vertical line on plots
+        """
         self.extent = (low[0], high[0], low[1], high[1])
         self.h_line = h_line
         self.v_line = v_line
 
         
     def conditional_plot(self, logger, current_total_step):
+        """Check if should plot in this time step and possibly plot"""
         if current_total_step % self.plot_every == 0 and self.realtime_plotting:
             self.plot(logger, current_total_step)
             return True
@@ -44,6 +80,11 @@ class Plotter():
             return False
 
     def plot(self, logger, current_total_step):
+        """Plot everything, and update figures
+
+        plt.pause() at the end of this funcion can CRASH program if
+        pdb is used somewhere else in the code.
+        """
 
         # print('---')
         # print(current_total_step % step_span == 0)
@@ -149,12 +190,12 @@ def plot_q_val_wireframe(ax, q_val, extent, labels, color, alpha):
     """Plot 2d q_val array on 3d wireframe plot.
     
     Params:
-        ax - axis to plot on
-        q_val - 2d numpy array as follows:
-                1-st dim is X, increasing as indices grow
-                2-nd dim is Y, increasing as indices grow
-        extent - [x_min, x_max, y_min, y_max]
-        labels - [x_label, y_label, z_label]
+        ax: axis to plot on
+        q_val: 2d numpy array as follows:
+               1-st dim is X, increasing as indices grow
+               2-nd dim is Y, increasing as indices grow
+        extent: [x_min, x_max, y_min, y_max]
+        labels: [x_label, y_label, z_label]
     """
 
     assert len(extent) == 4
@@ -178,6 +219,7 @@ def plot_q_val_wireframe(ax, q_val, extent, labels, color, alpha):
 
 
 def plot_q_val_imshow(ax, q_val, extent, h_line, v_line):
+    """Plot Q-val on 2d heat-map like plot"""
     assert len(extent) == 4
 
     x_min, x_max, y_min, y_max = extent
@@ -191,6 +233,7 @@ def plot_q_val_imshow(ax, q_val, extent, h_line, v_line):
 
 
 def plot_policy(ax, q_val, extent, h_line, v_line):
+    """Plot colorfull dots on 2d space corresponding to actions"""
     assert len(extent) == 4
 
     x_min, x_max, y_min, y_max = extent
@@ -252,6 +295,11 @@ def plot_policy(ax, q_val, extent, h_line, v_line):
 
 
 def plot_trajectory_2d(ax, x_arr, y_arr, act_arr, nb_actions, extent, h_line, v_line):
+    """Plot recent agent trajectory
+
+    For mountain car this will plot circles mostly
+    For pendulum it will also plot circle-curvle like paths
+    """
     assert len(extent) == 4
 
     x_min, x_max, y_min, y_max = extent

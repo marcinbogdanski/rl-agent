@@ -5,6 +5,30 @@ import socket
 import datetime
 
 class Log():
+    """Log containing header and multiple user-defined series of data
+
+    One log should be used for each module. E.g. one or more for agent, one for 
+    DQN memory, one for Q-approximator, one for Policy etc.
+
+    Each log must be initialized first by calling:
+        * add_param() to define header info
+        * add_data_item() to define data items logged over lifetime of the Log
+        * all add_param() and add_data_item() calls must happen before actuall
+          logging starts
+
+    Example:
+        log = Log('DQN Memory Log')
+        log.add_param('max_len', 100000)   # header info saved once
+        log.add_param('enable_pmr', False)
+        ...
+        log.add_data_item('curr_size')  # define data to be logged
+        log.add_data_item('state')      # these will have to be supplied
+        log.add_data_item('action')     # every time data is passed to logger
+        ...
+        # actually log stuff, persumably once every couple time-steps
+        log.append(curr_size=10, state=[1, 2], action=2)
+    """    
+
     def __init__(self, name, desc=''):
         self.name = name
         self.description = desc
@@ -19,7 +43,11 @@ class Log():
         self.data = {}
         self.data_info = {}
 
+        # set to True first time set_data_item() is called
         self._is_initialized = False
+
+        # set to True first time append() is called, after that any further
+        # calls to add_param() and add_data_item() will raise exception
         self._recording_started = False
 
     @property
@@ -60,10 +88,12 @@ class Log():
 
 
     def add_param(self, name, value, info=''):
+        """Add header info, e.g. module configuration items."""
         self.params[name] = value
         self.params_info[name] = info
 
     def add_data_item(self, name, info=''):
+        """Specify data item for logging"""
         self._is_initialized = True
         if not self._recording_started:
             self.data[name] = []
@@ -73,6 +103,14 @@ class Log():
 
 
     def append(self, episode, step, total_step, **data):
+        """Actually log data
+
+        Params:
+            episode: current episode
+            step: current step within episode
+            total_step: step number from begining of time
+            data (dict): log data as defined by add_data_item() calls
+        """
 
         self._recording_started = True
 
@@ -98,6 +136,7 @@ class Log():
             self.data[key].append(val)
 
     def get_last(self, key):
+        """Get most recent data item for specified key"""
         arr = self.data[key]
         item = self.data[key][-1] if len(arr) > 0 else None
         episode = self.episodes[-1]
@@ -107,6 +146,10 @@ class Log():
 
 class Logger():
     def __init__(self):
+        """Wrapper around multiple Log objects
+
+        This class can save/load itself from a file.
+        """
 
         self.datetime = str(datetime.datetime.now())  # date and time
         self.hostname = socket.gethostname()  # name of PC where script is run

@@ -69,9 +69,11 @@ class TestAgent(unittest.TestCase):
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=22000,
-            mem_size_max=10000,
-            mem_batch_size=64,
-            mem_enable_pmr=False,
+            memory=rl.Memory(
+                max_len=10000,
+                batch_size=64,
+                enable_pmr=False,
+                initial_pmr_error=1000.0),
             q_fun_approx=rl.KerasApproximator(model=q_model),
             policy=rl.QMaxPolicy(
                 expl_start=False,
@@ -113,9 +115,7 @@ class TestAgent(unittest.TestCase):
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=0,
-            mem_size_max=10000,
-            mem_batch_size=64,
-            mem_enable_pmr=False,
+            memory=None,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=8,
@@ -160,9 +160,7 @@ class TestAgent(unittest.TestCase):
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=0,
-            mem_size_max=10000,
-            mem_batch_size=64,
-            mem_enable_pmr=False,
+            memory=None,
             q_fun_approx=rl.AggregateApproximator(
                 step_size=0.3,
                 bins=[64, 64],

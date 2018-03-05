@@ -4,6 +4,19 @@ import gym
 class QMaxPolicy:
     def __init__(self, expl_start, nb_rand_steps,
             e_rand_start, e_rand_target, e_rand_decay):
+        """Epsilon-random policy that picks actions based on Q-values
+    
+        Args:
+            expl_start (bool): if true, first action in new episode will
+                always be random
+            nb_rand_steps (int): how many random steps to take before starting
+                epsilon schedule
+            e_rand_start (float): initial value of epsilon to use after
+                nb_rand_ssteps are completed
+            e_rand_target (float): minimum epsilon random value after
+                schedule is completed
+            e_rand_decay (float): how much decay epsilon random each step
+        """
         
         # if set, first action in episode will always be random
         self._expl_start = expl_start
@@ -27,6 +40,8 @@ class QMaxPolicy:
         self._q_approx = None
 
     def set_state_action_spaces(self, state_space, action_space):
+        """Set state and action spaces, mostly for type checking"""
+
         # These should be relaxed in the future,
         # possibly remove gym dependancy
         if not isinstance(state_space, gym.spaces.Box):
@@ -60,6 +75,16 @@ class QMaxPolicy:
                 self._epsilon_random = self._epsilon_random_target
 
     def pick_action(self, state):
+        """Pick one action according to current epsilon random
+
+        Works as follows:
+         - if nb_rand_steps not completed yet, pick action at random
+         - if exploring starts enabled and first action in episode, then random
+         - otherwise, roll dice:
+           + if result < epsilon random, pick random
+           + else pick argmax(Q)
+        """ 
+
         assert self._state_space is not None
         assert self._action_space is not None
         assert self._q_approx is not None
@@ -99,4 +124,5 @@ class QMaxPolicy:
         return res
 
     def train(self):
+        """In policy gradient methods used for training, do nothing"""
         pass

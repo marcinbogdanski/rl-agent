@@ -1,6 +1,7 @@
 
 
 def train_agent(env, agent, total_steps, target_avg_reward=None):
+    """Simple agent train loop"""
 
     agent.reset()
 

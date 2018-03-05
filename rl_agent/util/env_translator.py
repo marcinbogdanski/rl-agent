@@ -8,6 +8,20 @@ class EnvTranslator:
                 action_space=None,
                 action_translator=None,
                 reward_translator=None):
+        """Translate observations, actions and rewards between Env and Agent.
+
+        If observation_space or observation_translator is specified, then
+        both have to be specified. Alternatively both can be set to None if
+        no translation is required. Same for actions.
+
+        Params:
+            env - environment to be wrapped
+            observation_space: obs space to be usesd by the Agent, can be None
+            observation_translator: function that translates env -> agent
+            action_space: action space to be used by the Agent
+            action_translator: function that translates actions agent -> env
+            reward_translator: reward engineering):
+        """
 
         if observation_space is not None and observation_translator is None:
             raise ValueError('Must specify both observation_space and observation_translator')
@@ -27,6 +41,7 @@ class EnvTranslator:
         self.reward_translator = reward_translator
 
     def reset(self):
+        """Wrap env.reset()"""
         observation = self.env.reset()
         if self.observation_translator is not None:
             observation = self.observation_translator(observation)
@@ -34,6 +49,7 @@ class EnvTranslator:
         return observation
 
     def step(self, action):
+        """Wrap env.step()"""
         if self.action_translator is not None:
             assert self.action_space.contains(action)
             action = self.action_translator(action)

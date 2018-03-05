@@ -4,6 +4,8 @@ from . import neural_mini
 
 import pdb
 
+# NOT TESTED for a while, obsolete interface, do not use
+
 class NeuralApproximator:
 
     def __init__(self, step_size, discount, batch_size, log=None):

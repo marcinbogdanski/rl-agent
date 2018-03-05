@@ -62,45 +62,67 @@ class Program():
             
         self.env.seed(args.seed)
 
+        test_dqn = False
+        if test_dqn:
 
-        #
-        #   Model
-        #
-        q_model = tf.keras.models.Sequential()
-        q_model.add(tf.keras.layers.Dense(256, 'relu', input_dim=2))
-        q_model.add(tf.keras.layers.Dense(256, 'relu'))
-        q_model.add(tf.keras.layers.Dense(3, 'linear'))
-        q_model.compile(loss='mse', 
-            optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
+            #
+            #   Model
+            #
+            q_model = tf.keras.models.Sequential()
+            q_model.add(tf.keras.layers.Dense(256, 'relu', input_dim=2))
+            q_model.add(tf.keras.layers.Dense(256, 'relu'))
+            q_model.add(tf.keras.layers.Dense(3, 'linear'))
+            q_model.compile(loss='mse', 
+                optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
+            #
+            #   Agent - DQN with memory
+            #
+            agent = rl.Agent(
+                state_space=self.env.observation_space,
+                action_space=self.env.action_space,
+                discount=0.99,
+                start_learning_at=100000,
+                memory=rl.Memory(
+                    max_len=100000,
+                    batch_size=1024,
+                    enable_pmr=False,
+                    initial_pmr_error=1000.0),
+                q_fun_approx=rl.KerasApproximator(q_model),
+                policy=rl.QMaxPolicy(
+                    expl_start=False,
+                    nb_rand_steps=100000,
+                    e_rand_start=1.0,
+                    e_rand_target=0.1,
+                    e_rand_decay=1/10000)
+                )
 
-        #
-        #   Agent
-        #
-        agent = rl.Agent(
-            state_space=self.env.observation_space,
-            action_space=self.env.action_space,
-            discount=0.99,
-            start_learning_at=0,
-            
-            mem_size_max=10000,
-            mem_batch_size=64,
-            mem_enable_pmr=False,
-            q_fun_approx=rl.TilesApproximator(
-                step_size=0.3,
-                num_tillings=8,
-                init_val=0),
-            # q_fun_approx=rl.AggregateApproximator(
-            #     step_size=0.3,
-            #     bins=[64, 64],
-            #     init_val=0),
-            policy=rl.QMaxPolicy(
-                expl_start=False,
-                nb_rand_steps=0,
-                e_rand_start=1.0,
-                e_rand_target=0.1,
-                e_rand_decay=1/10000)
-            )
+        else:
+
+            #
+            #   Agent - tiles or aggregate
+            #
+            agent = rl.Agent(
+                state_space=self.env.observation_space,
+                action_space=self.env.action_space,
+                discount=0.99,
+                start_learning_at=0,
+                memory=None,
+                q_fun_approx=rl.TilesApproximator(
+                    step_size=0.3,
+                    num_tillings=8,
+                    init_val=0),
+                # q_fun_approx=rl.AggregateApproximator(
+                #     step_size=0.3,
+                #     bins=[64, 64],
+                #     init_val=0),
+                policy=rl.QMaxPolicy(
+                    expl_start=False,
+                    nb_rand_steps=0,
+                    e_rand_start=1.0,
+                    e_rand_target=0.1,
+                    e_rand_decay=1/10000)
+                )
 
 
         #
@@ -144,7 +166,8 @@ class Program():
 
             agent.log_episodes = self.logger.epsumm
             agent.log_hist = self.logger.hist
-            agent.memory.install_logger(self.logger.memory, log_every=1000)
+            if agent.memory is not None:
+                agent.memory.install_logger(self.logger.memory, log_every=1000)
             agent.Q.install_logger(
                 self.logger.q_val, log_every=1000, samples=(64, 64))
 

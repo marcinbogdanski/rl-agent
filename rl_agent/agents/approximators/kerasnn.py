@@ -14,6 +14,15 @@ import pdb
 class KerasApproximator(BaseApproximator):
 
     def __init__(self, model):
+        """Q-function approximator using Keras model
+
+        Tested for continous 2d observation space and categorical actions
+
+        See base class documentation for method descriptions
+
+        Args:
+            model: Keras compiled model
+        """
         super().__init__()
         self._model = model
         self._state_space = None
