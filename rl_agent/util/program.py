@@ -10,6 +10,7 @@ import numpy as np
 import tensorflow as tf
 
 import gym
+import gym.spaces
 
 import argparse
 
