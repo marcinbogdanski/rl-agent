@@ -370,7 +370,7 @@ class Agent:
                 At_1 = self._trajectory[t+1].action
                 if At_1 is None:
                     # TODO: should this be St, or St_1 !?!
-                    At_1 = self.policy.pick_action(St)
+                    At_1 = self.policy.pick_action(St_1)
                 Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
             self.Q.train(St, At, Tt)

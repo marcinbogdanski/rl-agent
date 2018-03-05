@@ -52,7 +52,7 @@ class Program():
             torques = [-2.0, -0.5, 0.0, 0.5, 2.0]
             return np.array([torques[act]])
         self.env = rl.util.EnvTranslator(
-            env=gym.make('Pendulum-v0').env,
+            env=gym.make('Pendulum-v0'),
             observation_space=gym.spaces.Box(
                 low=np.array([-np.pi, -8.0]), 
                 high=np.array([np.pi, 8.0])),
