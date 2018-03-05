@@ -10,6 +10,10 @@ import pdb
 
 
 def main():
+    """This is used to accumulate all information from multiple .log files
+
+    This was NOT TESTED recently, so probably doesn't work as expected.
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument('dirname', help='Data log filename')

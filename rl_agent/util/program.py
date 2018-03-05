@@ -1,9 +1,13 @@
+"""
+This file contains couple of commonly used helper functions, mostly for:
+ * parsing common arguments (seed, reproducible mode)
+ * freezing random seeds across all possible libraries
+"""
 import os
 import random
 import numpy as np
 
 import tensorflow as tf
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # hide TF info msgs, keep warnings
 
 import gym
 
@@ -12,11 +16,20 @@ import argparse
 from . import logger
 
 def parse_common_args(parser=None):
+    """Parse commonly used command line arguments
+
+    Params:
+        parser - argparse.ArgumentParser() created by user.
+                 If None, then will create new one.
+
+    Returns:
+        set of parsed arguments
+    """
     if parser is None:
         parser = argparse.ArgumentParser()
     else:
-        # TODO: check seed, reproducible, plot and logfile exist
-        #       and return error if they do
+        # TODO: enusure user did not create overlapping arguments so we 
+        #       don't add them twice? return error if they did
         parser = parser
         
     parser.add_argument('-s', '--seed', type=int,
@@ -37,6 +50,16 @@ def parse_common_args(parser=None):
 
 
 def try_freeze_random_seeds(seed, reproducible):
+    """Will attempt to make execution fully reproducible
+
+    Params:
+        seed (int): Set random seeds for following modules:
+            random, numpy.random, tensorflow, gym.spaces
+        reproducible (bool): if True, then:
+            Disbale GPU by setting env. var. CUDA_VISIBLE_DEVICES to '-1'
+            Disable randomised hashing by setting PYTHONHASHSEED to '0'
+            Force single-threadeed execution in tensorflow
+    """
     #
     #   Environment variables
     #
@@ -58,12 +81,9 @@ def try_freeze_random_seeds(seed, reproducible):
     #
     #   Set TF session
     #
-    config = tf.ConfigProto()    
     if reproducible:
+        config = tf.ConfigProto()    
         config.intra_op_parallelism_threads=1
         config.inter_op_parallelism_threads=1
-
-    config.gpu_options.per_process_gpu_memory_fraction=0.2
-    # config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
+        sess = tf.Session(config=config)
 

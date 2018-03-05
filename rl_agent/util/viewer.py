@@ -9,6 +9,10 @@ import rl_agent as rl
 
 
 def main():
+    """This is separate program used to parse and plot .log created by Logger.
+
+    This was NOT TESTED in a while and probably doesn't work at the moment.
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help='Data log filename')
