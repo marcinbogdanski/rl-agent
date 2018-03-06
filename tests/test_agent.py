@@ -93,8 +93,8 @@ class TestAgent(unittest.TestCase):
         print('  wegight sum:', ws)
         print('  st, act, rew, done:', st, act, rew, done)
 
-        self.assertEqual(fp, -8093.627516248174)
-        self.assertEqual(ws, 3562.3154466748238)
+        self.assertEqual(fp, -8093.633372464128)
+        self.assertEqual(ws, 3562.30959045887)
         self.assertEqual(st, -11822.942962922998)
         self.assertEqual(act, 23165)
         self.assertEqual(rew, -22999.0)
