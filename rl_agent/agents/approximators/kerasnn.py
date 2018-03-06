@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from .base_approx import BaseApproximator
+from .approx_base import ApproximatorBase
 import gym
 
 import pdb

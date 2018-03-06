@@ -1,7 +1,7 @@
 import numpy as np
 import pdb
 
-class BaseApproximator:
+class ApproximatorBase:
     def __init__(self):
         """Base class for all aproximators
 

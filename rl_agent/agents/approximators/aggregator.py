@@ -1,5 +1,5 @@
 import numpy as np
-from .base_approx import BaseApproximator
+from .approx_base import ApproximatorBase
 import gym
 
 import pdb
