@@ -6,7 +6,7 @@ import pdb
 
 # TODO: documentaiton & comments
 
-class AggregateApproximator(BaseApproximator):
+class AggregateApproximator(ApproximatorBase):
 
     def __init__(self, step_size, bins, init_val):
         """Bin-bucket state aggregator, works like histogram

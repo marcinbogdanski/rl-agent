@@ -5,7 +5,7 @@ import gym
 
 import pdb
 
-class TilesApproximator(BaseApproximator):
+class TilesApproximator(ApproximatorBase):
     def __init__(self, step_size, num_tillings, init_val):
         """Use tilings as state features with linear approximator
 

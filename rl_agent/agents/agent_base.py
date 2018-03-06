@@ -1,5 +1,7 @@
 import numpy as np
 
+import pdb
+
 class HistoryData:
     """One piece of agent trajectory (obs, rew, act, done)"""
     def __init__(self, total_step, observation, reward, done):

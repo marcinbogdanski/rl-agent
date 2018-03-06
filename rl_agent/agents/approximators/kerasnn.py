@@ -11,7 +11,7 @@ import pdb
 # TODO: Proper unittest
 # TODO: update normalisation code, requires updating unittest
 
-class KerasApproximator(BaseApproximator):
+class KerasApproximator(ApproximatorBase):
 
     def __init__(self, model):
         """Q-function approximator using Keras model
