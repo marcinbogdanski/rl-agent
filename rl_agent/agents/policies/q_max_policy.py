@@ -20,6 +20,7 @@ class QMaxPolicy:
         
         # if set, first action in episode will always be random
         self._expl_start = expl_start
+        self._force_random_action = self._expl_start
 
         # if true, exec random action until memory is full
         self._nb_rand_steps = nb_rand_steps  
