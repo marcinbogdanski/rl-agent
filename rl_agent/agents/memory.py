@@ -200,7 +200,7 @@ class Memory:
         self._log_mem = logger
         self._log_every = log_every
 
-    def log(self, episode, step, total_step):
+    def perform_logging(self, episode, step, total_step):
 
         if self._log_mem is not None and not self._log_mem.is_initialized:
             self._log_mem.add_param('max_len', self._max_len)

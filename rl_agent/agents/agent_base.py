@@ -110,7 +110,7 @@ class AgentBase:
         #   Callbacks
         #
         self._callback_on_step_end = None
-        self._callback_on_step_end_params = None
+
 
         #
         #   Debug stuff for unittests
@@ -209,7 +209,8 @@ class AgentBase:
     def next_step(self, done):
         """Call to indicate time-step is over so agent can do housekeeping"""
 
-        self.log(self.completed_episodes, self.step, self.total_step)
+        self.perform_logging(
+            self.completed_episodes, self.step, self.total_step)
 
         if self._callback_on_step_end is not None:
             self._callback_on_step_end(
@@ -260,8 +261,8 @@ class AgentBase:
             raise ValueError('unknown callback routine' + which)
 
 
-    def log(self, episode, step, total_step):
-        """Log internal stuff, call log() on all configured modules"""
+    def perform_logging(self, episode, step, total_step):
+        """Log internal stuff, call perform_logging() on all configured modules"""
         
         #
         #   Log episodes

@@ -58,10 +58,10 @@ class AgentSARSA(AgentBase):
         self.policy.next_step(self._curr_total_step)
 
 
-    def log(self, episode, step, total_step):
-        super().log(episode, step, total_step)
+    def perform_logging(self, episode, step, total_step):
+        super().perform_logging(episode, step, total_step)
         if self.Q is not None:
-            self.Q.log(episode, step, total_step)
+            self.Q.perform_logging(episode, step, total_step)
 
 
     def learn(self):

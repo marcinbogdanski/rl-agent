@@ -53,7 +53,7 @@ class ApproximatorBase:
         self._log_every = log_every
         self._log_samples = samples
 
-    def log(self, episode, step, total_step):
+    def perform_logging(self, episode, step, total_step):
         assert self._state_space is not None
         assert self._action_space is not None
 
