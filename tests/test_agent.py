@@ -64,7 +64,7 @@ class TestAgent(unittest.TestCase):
             optimizer=tf.keras.optimizers.RMSprop(lr=0.00025))
 
         # Configure agent
-        agent = rl.Agent(
+        agent = rl.AgentDQN(
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
@@ -110,12 +110,11 @@ class TestAgent(unittest.TestCase):
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
-        agent = rl.Agent(
+        agent = rl.AgentSARSA(
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=0,
-            memory=None,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=8,
@@ -155,12 +154,11 @@ class TestAgent(unittest.TestCase):
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
-        agent = rl.Agent(
+        agent = rl.AgentSARSA(
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=0,
-            memory=None,
             q_fun_approx=rl.AggregateApproximator(
                 step_size=0.3,
                 bins=[64, 64],

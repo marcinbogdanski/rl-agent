@@ -78,7 +78,7 @@ class Program():
             #
             #   Agent - DQN with memory
             #
-            agent = rl.Agent(
+            agent = rl.AgentDQN(
                 state_space=self.env.observation_space,
                 action_space=self.env.action_space,
                 discount=0.99,
@@ -102,12 +102,11 @@ class Program():
             #
             #   Agent - tiles or aggregate
             #
-            agent = rl.Agent(
+            agent = rl.AgentSARSA(
                 state_space=self.env.observation_space,
                 action_space=self.env.action_space,
                 discount=0.99,
                 start_learning_at=0,
-                memory=None,
                 q_fun_approx=rl.TilesApproximator(
                     step_size=0.3,
                     num_tillings=8,
@@ -166,7 +165,7 @@ class Program():
 
             agent.log_episodes = self.logger.epsumm
             agent.log_hist = self.logger.hist
-            if agent.memory is not None:
+            if isinstance(agent, rl.AgentDQN):
                 agent.memory.install_logger(self.logger.memory, log_every=1000)
             agent.Q.install_logger(
                 self.logger.q_val, log_every=1000, samples=(64, 64))

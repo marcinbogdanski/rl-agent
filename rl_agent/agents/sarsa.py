@@ -7,37 +7,10 @@ from .approximators import KerasApproximator
 import pdb
 
 
-class Agent(AgentBase):
-    """Generic RL Agent class.
+class AgentSARSA(AgentBase):
+    """Simple SARSA Agent
 
-    Can be configured in various ways to match different learning algorithms.
-
-    Timestep convention matches Sutton & Barto 2018:
-        *** time step starts ***
-        1) either reset env, or perform env.step(action_form_previous_step)
-        2) feed obs, reward and done flat to Agent for learning
-        3) do Agent.take_action() to select action for next time step
-        4) do housekeeping, logging, callbacks etc.
-        *** time step ends ***
-
-    Abbreviated example of Agent training loop:
-        agent.reset()  # optional, in case agent has non-terminated trajectory
-        done = True
-        while True:
-            # *** time step starts here ***
-            if done:                           # reset or step the environment
-                obs, reward, done = env.reset(), None, False
-            else:
-                obs, reward, done, _ = env.step(action)
-            agent.observe(obs, reward, done)   # save to internal trajectory
-            agent.learn()                      # learn from internal trajectory
-            action = agent.take_action(obs)    # pick act and save internally
-            agent.next_step()                  # inform agent step is over
-            # *** time step ends here ***
-            if agent.total_step > train_steps: # check stop conditions
-                break
-
-    For more complete example see rl_agent.runner.train_agent() function
+    See base class doc for how to use Agents in general.
     """
 
     def __init__(self,
@@ -46,7 +19,6 @@ class Agent(AgentBase):
         discount,
         start_learning_at,
 
-        memory,
         q_fun_approx,
         policy):
         """
@@ -62,18 +34,10 @@ class Agent(AgentBase):
             discount, start_learning_at)
 
         #
-        #   Initialise Memory Module
-        #
-        self.memory = memory
-        if memory is not None:
-            self.memory.set_state_action_spaces(state_space, action_space)
-
-        #
         #   Initialize Q-function approximator
         #
         self.Q = q_fun_approx
-        if self.Q is not None:
-            self.Q.set_state_action_spaces(state_space, action_space)
+        self.Q.set_state_action_spaces(state_space, action_space)
 
         #
         #   Initialize Policy Module
@@ -96,8 +60,6 @@ class Agent(AgentBase):
 
     def log(self, episode, step, total_step):
         super().log(episode, step, total_step)
-        if self.memory is not None:
-            self.memory.log(episode, step, total_step)
         if self.Q is not None:
             self.Q.log(episode, step, total_step)
 
@@ -137,52 +99,23 @@ class Agent(AgentBase):
         Rt_1 = self._trajectory[t+1].reward       # next step reward
         done = self._trajectory[t+1].done
 
-        if self.memory is not None:
-            self.memory.append(St, At, Rt_1, St_1, done)
-
         if self._curr_total_step < self._start_learning_at:
             # no lerninng during initial random phase
             return
 
 
-        if isinstance(self.Q, KerasApproximator):
-
-            #
-            #   Q-Learning
-            #
-
-            # Get batch
-            states, actions, rewards_1, states_1, dones, indices = \
-                self.memory.get_batch()
-            
-            # Calculates max_Q for next states
-            q_max = self.Q.max_op(states_1)
-
-            # True if state non-terminal
-            not_dones = np.logical_not(dones)
-
-            # Calc target Q values (reward_t + discout * max(Q_t_plus_1))
-            targets = rewards_1 + (not_dones * self._discount * q_max)
-
-            errors = self.Q.train(states, actions, targets)
-
-            self.memory.update_errors(indices, np.abs(errors))
-
+        #
+        #   SARSA
+        #
+        if done:
+            Tt = Rt_1
         else:
+            At_1 = self._trajectory[t+1].action
+            if At_1 is None:
+                At_1 = self.policy.pick_action(St_1)
+            Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
 
-            #
-            #   SARSA
-            #
-            if done:
-                Tt = Rt_1
-            else:
-                At_1 = self._trajectory[t+1].action
-                if At_1 is None:
-                    # TODO: should this be St, or St_1 !?!
-                    At_1 = self.policy.pick_action(St_1)
-                Tt = Rt_1 + self._discount * self.Q.estimate(St_1, At_1)                
-
-            self.Q.train(St, At, Tt)
+        self.Q.train(St, At, Tt)
             
 
     def get_fingerprint(self):

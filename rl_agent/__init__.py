@@ -1,5 +1,6 @@
 from .agents.runner import train_agent  # function
-from .agents.agent import Agent
+from .agents.sarsa import AgentSARSA
+from .agents.dqn import AgentDQN
 from .agents.memory import Memory
 from .agents.approximators import AggregateApproximator
 from .agents.approximators import TilesApproximator

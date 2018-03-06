@@ -92,12 +92,11 @@ class Program():
         #
         #   Agent
         #
-        agent = rl.Agent(
+        agent = rl.AgentSARSA(
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
             discount=0.99,
             start_learning_at=0,
-            memory=None,
             q_fun_approx=rl.TilesApproximator(
                 step_size=0.3,
                 num_tillings=16,
