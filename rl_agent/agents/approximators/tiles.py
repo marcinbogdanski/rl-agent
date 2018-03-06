@@ -1,5 +1,5 @@
 import numpy as np
-from . import tile_coding
+from ...util import tile_coding
 from .base_approx import BaseApproximator
 import gym
 
