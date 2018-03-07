@@ -2,12 +2,14 @@ import numpy as np
 
 import pdb
 
+
 class TrajectoryData:
     """One piece of agent trajectory (obs, rew, act, done)"""
     def __init__(self, total_step, observation, reward, done):
         assert isinstance(total_step, int)
         assert total_step >= 0
-        assert isinstance(observation, np.ndarray)
+        assert np.isscalar(observation) \
+               or isinstance(observation, np.ndarray)
         self.total_step = total_step
         self.observation = observation
         self.reward = reward

@@ -45,8 +45,11 @@ class QMaxPolicy:
 
         # These should be relaxed in the future,
         # possibly remove gym dependancy
-        if not isinstance(state_space, gym.spaces.Box):
-            raise ValueError('Only gym.spaces.Box state space supproted')
+        if isinstance(state_space, gym.spaces.Box) \
+            or isinstance(state_space, gym.spaces.Discrete):
+            pass
+        else:
+            raise ValueError('Only Box and Discrete state space supproted')
         if not isinstance(action_space, gym.spaces.Discrete):
             raise ValueError('Only gym.spaces.Discrete action space supported')
 
