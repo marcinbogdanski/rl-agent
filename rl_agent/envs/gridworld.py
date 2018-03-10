@@ -5,6 +5,7 @@ import gym
 
 import pdb
 
+# TODO: Under Construction
 
 class Gridworld:
     """Simple gridworld
@@ -18,7 +19,9 @@ class Gridworld:
         where state x=0, y=0 is in bottom left
     """
 
-    def __init__(self, size_x, size_y, random_start=False):
+    def __init__(self, size_x, size_y,
+            random_start=False,
+            default_reward=-1):
         self._size_x = size_x
         self._size_y = size_y
         self._random_start = random_start
@@ -29,7 +32,8 @@ class Gridworld:
         states = np.arange(size_x*size_y, dtype=int)
         self._states = states.reshape(size_y, size_x)
         self._grid = np.zeros([size_y, size_x], dtype=int)
-        self._act_rewards = np.zeros([size_y, size_x, 4], dtype=float) - 1
+        self._act_rewards = \
+            np.zeros([size_y, size_x, 4], dtype=float) + default_reward
 
         self._start_states = []
 
@@ -66,7 +70,7 @@ class Gridworld:
 
 
     def step(self, action):
-        if not self.observation_space.contains(action):
+        if not self.action_space.contains(action):
             raise ValueError('Invalid action')
         if self._is_done:
             raise ValueError('Episode terminated')
