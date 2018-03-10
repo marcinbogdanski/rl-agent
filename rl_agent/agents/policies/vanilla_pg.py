@@ -48,13 +48,9 @@ class VanillaPolicyGradient:
     def next_step(self, total_step):
         pass
 
-    def _construct_features(state, action):
-        features = np.zeros([state_space.n, action_space.n])
-        features[state, action] = 1
-        return features
-
     def pick_action(self, state):
 
+        # Fully generic would look like this:
         # features = np.zeros(self._state_space.n)
         # features[state] = 1
         # preferences = np.dot(features, self._weights)
@@ -85,3 +81,11 @@ class VanillaPolicyGradient:
 
         pass
         #raise NotImplementedError
+
+    def get_raw(self, state):
+        """Regurns probability distribuition for actions"""
+
+        pref_all_act = self._weights[state]
+        prob_all_act = _softmax(pref_all_act)
+
+        return prob_all_act
