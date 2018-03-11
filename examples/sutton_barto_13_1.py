@@ -76,7 +76,7 @@ def main(plot):
 
     env = EnvSB_13_1()
 
-    agent = rl.AgentMonteCarlo(
+    agent = rl.AgentOffline(
         state_space=env.observation_space,
         action_space=env.action_space,
         discount=1.0,

@@ -66,7 +66,7 @@ env = EnvSB()
 
 # Under construction
 
-agent = rl.AgentMonteCarlo(
+agent = rl.AgentOffline(
     state_space=env.observation_space,
     action_space=env.action_space,
     discount=1.0,

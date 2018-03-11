@@ -10,7 +10,7 @@ import pdb
 # TODO: unit test
 # TODO: remove start_learning_at parameter
 
-class AgentMonteCarlo(AgentBase):
+class AgentOffline(AgentBase):
     """Work in progress
 
     See base class doc for how to use Agents in general.

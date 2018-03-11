@@ -1,5 +1,5 @@
 from .agents.runner import train_agent  # function
-from .agents.monte_carlo import AgentMonteCarlo
+from .agents.agent_offline import AgentOffline
 from .agents.sarsa import AgentSARSA
 from .agents.dqn import AgentDQN
 from .agents.memory import Memory
