@@ -30,7 +30,7 @@ class Corridor:
             np.zeros([length, 2], dtype=float) + default_reward
 
         self._agent_pos = None
-        self._is_done = False
+        self._is_done = True
 
 
     def reset(self):

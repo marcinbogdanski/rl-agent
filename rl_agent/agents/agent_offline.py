@@ -11,7 +11,7 @@ import pdb
 # TODO: remove start_learning_at parameter
 
 class AgentOffline(AgentBase):
-    """Work in progress
+    """Watis until episode end, then learns on all states/actions visited.
 
     See base class doc for how to use Agents in general.
     """

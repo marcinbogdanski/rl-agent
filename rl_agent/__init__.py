@@ -10,6 +10,7 @@ from .agents.approximators import KerasApproximator
 from .agents.policies import RandomPolicy
 from .agents.policies import QMaxPolicy
 from .agents.policies import VanillaPolicyGradient
+from .agents.policies import VanillaPolicyGradientContinous
 from . import envs
 from . import util
 
