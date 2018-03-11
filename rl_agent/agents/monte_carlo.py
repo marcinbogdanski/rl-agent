@@ -98,7 +98,7 @@ class AgentMonteCarlo(AgentBase):
         if self.Q is not None:
             self.Q.train(St, At, Gt)
 
-        self.policy.train(St, At, Gt)
+        self.policy.train_single(St, At, Gt)
 
 
     def _calc_Gt(self, t, n=float('inf')):

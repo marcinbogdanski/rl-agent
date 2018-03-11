@@ -62,10 +62,7 @@ class VanillaPolicyGradient:
         act = np.random.choice(range(len(prob_all_act)), p=prob_all_act)
         return act
 
-    def train(self, states, actions, targets):
-        self._update(states, actions, targets)
-
-    def _update(self, state, action, target):
+    def train_single(self, state, action, target):
 
         features = np.zeros([self._state_space.n, self._action_space.n])
         features[state, action] = 1
@@ -81,6 +78,11 @@ class VanillaPolicyGradient:
 
         pass
         #raise NotImplementedError
+
+    def train_batch(self, states, actions, targets):
+        raise NotImplementedError
+
+    
 
     def get_raw(self, state):
         """Regurns probability distribuition for actions"""

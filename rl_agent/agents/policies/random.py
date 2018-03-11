@@ -22,5 +22,11 @@ class RandomPolicy:
     def pick_action(self, state):
         return self._action_space.sample()
 
-    def train(self):
+    def train_single(self, state, action, target):
+        pass
+
+    def train_batch(self, states, actions, targets):
+        pass
+
+    def get_raw(self):
         pass

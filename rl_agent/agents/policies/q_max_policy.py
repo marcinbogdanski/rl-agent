@@ -127,6 +127,10 @@ class QMaxPolicy:
 
         return res
 
-    def train(self):
-        """In policy gradient methods used for training, do nothing"""
+    def train_single(self, state, action, target):
+        """In policy gradient methods used for training, here does nothing"""
+        pass
+
+    def train_batch(self, states, actions, targets):
+        """In policy gradient methods used for training, here does nothing"""
         pass
