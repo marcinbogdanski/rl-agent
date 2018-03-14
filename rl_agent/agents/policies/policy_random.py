@@ -1,7 +1,7 @@
 import numpy as np
 import gym
 
-class RandomPolicy:
+class PolicyRandom:
     def __init__(self):
         self._state_space = None
         self._action_space = None

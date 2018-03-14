@@ -101,7 +101,7 @@ class Program():
                 step_size=0.3,
                 num_tillings=16,
                 init_val=0),
-            policy=rl.QMaxPolicy(
+            policy=rl.PolicyEpsGreedy(
                 expl_start=False,
                 nb_rand_steps=0,
                 e_rand_start=0.0,

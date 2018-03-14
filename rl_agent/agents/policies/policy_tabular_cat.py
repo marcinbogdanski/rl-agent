@@ -3,40 +3,34 @@ import gym
 import pdb
 
 # TODO: Under Construction
-# TODO: Rename to PolicyGradientContinous
 # TODO: Change all NotImplemented to NotImplementedError
-# TODO: wrapp all scalar states/actions everywehre into 0-dim np array?
 
 def _softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=-1, keepdims=True)
 
-class VanillaPolicyGradientContinous:
-    def __init__(self, learn_rate, std_dev):
+class PolicyTabularCat:
+    def __init__(self, learn_rate):
         """Under construction"""
         self._learn_rate = learn_rate
         self._state_space = None
         self._action_space = None
         # self._v_approx = None
         # self._q_approx = None
-        self._weights = None          # means for different states
-        self._std_dev = std_dev
-        self._variance = std_dev**2   # variance not parametrized
+        self._weights = None
 
     def set_state_action_spaces(self, state_space, action_space):
         # These should be relaxed in the future,
         # possibly remove gym dependancy
         if not isinstance(state_space, gym.spaces.Discrete):
             raise ValueError('Only gym.spaces.Discrete state space supproted')
-        if not isinstance(action_space, gym.spaces.Box):
-            raise ValueError('Only gym.spaces.Box action space supported')
-        if action_space.shape != ():
-            raise ValueError('Only scalar actions supported for now')
+        if not isinstance(action_space, gym.spaces.Discrete):
+            raise ValueError('Only gym.spaces.Discrete action space supported')
 
         self._state_space = state_space
         self._action_space = action_space
 
-        self._weights = np.zeros([state_space.n])
+        self._weights = np.zeros([state_space.n, action_space.n])
 
 
     def link(self, agent):
@@ -55,22 +49,35 @@ class VanillaPolicyGradientContinous:
         pass
 
     def pick_action(self, state):
-        # just sample normal distribution
-        mean = self._weights[state]
-        action = np.random.normal(mean, self._std_dev)
-        return np.array(action)
+
+        # Fully generic would look like this:
+        # features = np.zeros(self._state_space.n)
+        # features[state] = 1
+        # preferences = np.dot(features, self._weights)
+        # assert (preferences == self._weights[state]).all()
+
+        pref_all_act = self._weights[state]
+        prob_all_act = _softmax(pref_all_act)
+
+        act = np.random.choice(range(len(prob_all_act)), p=prob_all_act)
+        return act
 
     def train_single(self, state, action, target):
 
-        features = np.zeros([self._state_space.n])
-        features[state] = 1
+        features = np.zeros([self._state_space.n, self._action_space.n])
+        features[state, action] = 1
 
-        mean = self._weights[state]
-        log_grad_st = (action - mean) * features
-        log_grad_st /= self._variance**2
+        pref_all_act = self._weights[state]
+        prob_all_act = _softmax(pref_all_act)
 
-        delta_weights = self._learn_rate * target * log_grad_st
-        self._weights += delta_weights
+        # Sutton & Barto eq 13.7
+        log_grad_st = np.copy(features)
+        log_grad_st[state] -= prob_all_act
+
+        self._weights += self._learn_rate * target * log_grad_st
+
+        pass
+        #raise NotImplementedError
 
     def train_batch(self, states, actions, targets):
         raise NotImplementedError
@@ -78,5 +85,9 @@ class VanillaPolicyGradientContinous:
     
 
     def get_raw(self, state):
-        """Regurns mean action for state"""
-        return self._weights[state]
+        """Regurns probability distribuition for actions"""
+
+        pref_all_act = self._weights[state]
+        prob_all_act = _softmax(pref_all_act)
+
+        return prob_all_act

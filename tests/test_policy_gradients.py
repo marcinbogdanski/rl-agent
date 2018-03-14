@@ -18,7 +18,7 @@ class TestPolicyGradient(unittest.TestCase):
             action_space=env.action_space,
             discount=1.0,
             q_fun_approx=None,
-            policy=rl.VanillaPolicyGradient(
+            policy=rl.PolicyTabularCat(
                 learn_rate=0.00001)
             )
 

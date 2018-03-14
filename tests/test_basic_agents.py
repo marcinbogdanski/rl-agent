@@ -44,7 +44,7 @@ class TestAgent(unittest.TestCase):
                 step_size=0.3,
                 num_tillings=8,
                 init_val=0),
-            policy=rl.QMaxPolicy(
+            policy=rl.PolicyEpsGreedy(
                 expl_start=False,
                 nb_rand_steps=0,
                 e_rand_start=1.0,
@@ -88,7 +88,7 @@ class TestAgent(unittest.TestCase):
                 step_size=0.3,
                 bins=[64, 64],
                 init_val=0),
-            policy=rl.QMaxPolicy(
+            policy=rl.PolicyEpsGreedy(
                 expl_start=False,
                 nb_rand_steps=0,
                 e_rand_start=0.1,

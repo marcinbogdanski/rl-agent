@@ -1,7 +1,7 @@
 import numpy as np
 
 from .agent_base import AgentBase
-from .policies import QMaxPolicy
+from .policies import PolicyEpsGreedy
 
 class AgentDQN(AgentBase):
     """DQN Agent with replay memory.
@@ -45,8 +45,8 @@ class AgentDQN(AgentBase):
         #
         #   Initialize Policy Module
         #
-        if not isinstance(policy, QMaxPolicy):
-            raise ValueError('Only QMaxPolicy policy supported for now')
+        if not isinstance(policy, PolicyEpsGreedy):
+            raise ValueError('Only PolicyEpsGreedy supported for now')
         self.policy = policy
         self.policy.set_state_action_spaces(state_space, action_space)
         self.policy.link(self)

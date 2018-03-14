@@ -7,10 +7,10 @@ from .agents.approximators import QFunctTabular
 from .agents.approximators import QFunctAggregate
 from .agents.approximators import QFunctTiles
 from .agents.approximators import QFunctKeras
-from .agents.policies import RandomPolicy
-from .agents.policies import QMaxPolicy
-from .agents.policies import VanillaPolicyGradient
-from .agents.policies import VanillaPolicyGradientContinous
+from .agents.policies import PolicyRandom
+from .agents.policies import PolicyEpsGreedy
+from .agents.policies import PolicyTabularCat
+from .agents.policies import PolicyTabularCont
 from . import envs
 from . import util
 

@@ -1,7 +1,7 @@
 import numpy as np
 import gym
 
-class QMaxPolicy:
+class PolicyEpsGreedy:
     def __init__(self, expl_start, nb_rand_steps,
             e_rand_start, e_rand_target, e_rand_decay):
         """Epsilon-random policy that picks actions based on Q-values

@@ -18,7 +18,7 @@ def main():
         q_fun_approx=rl.QFunctTabular(
             step_size=0.02,
             init_val=0),
-        policy=rl.QMaxPolicy(
+        policy=rl.PolicyEpsGreedy(
             expl_start=False,
             nb_rand_steps=0,
             e_rand_start=0.1,

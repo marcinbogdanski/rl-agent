@@ -75,7 +75,7 @@ class TestAgent(unittest.TestCase):
                 enable_pmr=False,
                 initial_pmr_error=1000.0),
             q_fun_approx=rl.QFunctKeras(model=q_model),
-            policy=rl.QMaxPolicy(
+            policy=rl.PolicyEpsGreedy(
                 expl_start=False,
                 nb_rand_steps=22000,
                 e_rand_start=1.0,
