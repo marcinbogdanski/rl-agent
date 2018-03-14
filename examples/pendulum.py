@@ -97,7 +97,7 @@ class Program():
             action_space=self.env.action_space,
             discount=0.99,
             start_learning_at=0,
-            q_fun_approx=rl.TilesApproximator(
+            q_fun_approx=rl.QFunctTiles(
                 step_size=0.3,
                 num_tillings=16,
                 init_val=0),

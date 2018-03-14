@@ -1,8 +1,6 @@
 import numpy as np
 
 from .agent_base import AgentBase
-from .approximators import KerasApproximator
-
 
 import pdb
 

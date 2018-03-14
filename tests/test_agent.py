@@ -74,7 +74,7 @@ class TestAgent(unittest.TestCase):
                 batch_size=64,
                 enable_pmr=False,
                 initial_pmr_error=1000.0),
-            q_fun_approx=rl.KerasApproximator(model=q_model),
+            q_fun_approx=rl.QFunctKeras(model=q_model),
             policy=rl.QMaxPolicy(
                 expl_start=False,
                 nb_rand_steps=22000,

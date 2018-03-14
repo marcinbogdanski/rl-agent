@@ -88,7 +88,7 @@ class Program():
                     batch_size=1024,
                     enable_pmr=False,
                     initial_pmr_error=1000.0),
-                q_fun_approx=rl.KerasApproximator(q_model),
+                q_fun_approx=rl.QFunctKeras(q_model),
                 policy=rl.QMaxPolicy(
                     expl_start=False,
                     nb_rand_steps=100000,
@@ -107,7 +107,7 @@ class Program():
                 action_space=self.env.action_space,
                 discount=0.99,
                 start_learning_at=0,
-                q_fun_approx=rl.TilesApproximator(
+                q_fun_approx=rl.QFunctTiles(
                     step_size=0.3,
                     num_tillings=8,
                     init_val=0),
