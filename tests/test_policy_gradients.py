@@ -3,15 +3,15 @@ import unittest
 
 import rl_agent as rl
 
-class TestSuttonBarto(unittest.TestCase):
+class TestPolicyGradient(unittest.TestCase):
     
     def setUp(self):
         np.random.seed(0)
 
-    def test_sutton_barto_13_1(self):
+    def test_swap_actions(self):
         
         # Sutton Barto example 13.1
-        env = rl.envs.SB_13_1_SwapMiddle()
+        env = rl.envs.SwapActions()
 
         agent = rl.AgentOffline(
             state_space=env.observation_space,
