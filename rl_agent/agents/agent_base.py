@@ -84,13 +84,11 @@ class AgentBase:
     def __init__(self,
         state_space,
         action_space,
-        discount,
-        start_learning_at):
+        discount):
 
         self._state_space = state_space
         self._action_space = action_space
         self._discount = discount  # usually gamma in literature
-        self._start_learning_at = start_learning_at
 
         #
         #   Housekeeping

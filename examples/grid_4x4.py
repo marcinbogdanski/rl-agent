@@ -14,7 +14,6 @@ def main():
         state_space=env.observation_space,
         action_space=env.action_space,
         discount=1.0,
-        start_learning_at=0,
         q_fun_approx=rl.QFunctTabular(
             step_size=0.02,
             init_val=0),

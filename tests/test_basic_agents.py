@@ -39,7 +39,6 @@ class TestAgent(unittest.TestCase):
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
-            start_learning_at=0,
             q_fun_approx=rl.QFunctTiles(
                 step_size=0.3,
                 num_tillings=8,
@@ -83,7 +82,6 @@ class TestAgent(unittest.TestCase):
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
-            start_learning_at=0,
             q_fun_approx=rl.QFunctAggregate(
                 step_size=0.3,
                 bins=[64, 64],

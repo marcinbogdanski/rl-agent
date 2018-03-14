@@ -6,7 +6,6 @@ import pdb
 
 # TODO: doc
 # TODO: unit test
-# TODO: remove start_learning_at parameter
 
 class AgentOffline(AgentBase):
     """Watis until episode end, then learns on all states/actions visited.
@@ -27,9 +26,7 @@ class AgentOffline(AgentBase):
             action_space: gym.spaces object describing action space
             discount: per-step reward discount, usually gamma in literature
         """
-        super().__init__(
-            state_space, action_space,
-            discount, start_learning_at=0)
+        super().__init__(state_space, action_space, discount)
 
         #
         #   Initialize Q-function approximator

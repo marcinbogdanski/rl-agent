@@ -15,7 +15,6 @@ class AgentSARSA(AgentBase):
         state_space,
         action_space,
         discount,
-        start_learning_at,
 
         q_fun_approx,
         policy):
@@ -27,9 +26,7 @@ class AgentSARSA(AgentBase):
             start_learning_at: postpone any learning until this time step,
                                use e.g. to pre-fill replay memory with random
         """
-        super().__init__(
-            state_space, action_space,
-            discount, start_learning_at)
+        super().__init__(state_space, action_space, discount)
 
         #
         #   Initialize Q-function approximator
@@ -77,12 +74,6 @@ class AgentSARSA(AgentBase):
 
         This assumesss time step t+1 is availalbe in the trajectory
 
-        For online updates:
-            Call with t equal to previous time step
-
-        For offline updates:
-            Iterate trajectory from t=0 to t=T-1 and call for every t
-
         Params:
             t (int [t, T-1]) - time step in trajectory,
                     0 is initial state; T-1 is last non-terminal state
@@ -96,11 +87,6 @@ class AgentSARSA(AgentBase):
         St_1 = self._trajectory[t+1].observation  # next state tuple (x, y)
         Rt_1 = self._trajectory[t+1].reward       # next step reward
         done = self._trajectory[t+1].done
-
-        if self._curr_total_step < self._start_learning_at:
-            # no lerninng during initial random phase
-            return
-
 
         #
         #   SARSA

@@ -7,10 +7,6 @@ import pdb
 # TODO: Change all NotImplemented to NotImplementedError
 # TODO: wrapp all scalar states/actions everywehre into 0-dim np array?
 
-def _softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=-1, keepdims=True)
-
 class PolicyTabularCont:
     def __init__(self, learn_rate, std_dev):
         """Under construction"""

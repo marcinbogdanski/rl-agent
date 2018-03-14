@@ -26,9 +26,10 @@ class AgentDQN(AgentBase):
             start_learning_at: postpone any learning until this time step,
                                use e.g. to pre-fill replay memory with random
         """
-        super().__init__(
-            state_space, action_space,
-            discount, start_learning_at)
+        super().__init__(state_space, action_space, discount)
+
+        # Allow delay so we can pre-fill memory with random policy
+        self._start_learning_at = start_learning_at
 
         #
         #   Initialise Memory Module
