@@ -7,7 +7,7 @@ import pdb
 # TODO: doc
 # TODO: unit test
 
-class AgentOffline(AgentBase):
+class AgentActorCritic(AgentBase):
     """Watis until episode end, then learns on all states/actions visited.
 
     See base class doc for how to use Agents in general.
@@ -18,6 +18,7 @@ class AgentOffline(AgentBase):
         action_space,
         discount,
 
+        v_fun_approx,
         q_fun_approx,
         policy):
         """
@@ -27,6 +28,13 @@ class AgentOffline(AgentBase):
             discount: per-step reward discount, usually gamma in literature
         """
         super().__init__(state_space, action_space, discount)
+
+        #
+        #   Initialize Q-function approximator
+        #
+        self.V = v_fun_approx
+        if self.V is not None:
+            self.V.set_state_action_spaces(state_space, action_space)
 
         #
         #   Initialize Q-function approximator

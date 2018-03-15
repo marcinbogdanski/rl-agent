@@ -35,7 +35,7 @@ class TestAgent(unittest.TestCase):
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
-        agent = rl.AgentSARSA(
+        agent = rl.AgentQ(
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,
@@ -78,7 +78,7 @@ class TestAgent(unittest.TestCase):
         env = gym.make('MountainCar-v0').env
         env.seed(self.seed)
 
-        agent = rl.AgentSARSA(
+        agent = rl.AgentQ(
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=0.99,

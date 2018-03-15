@@ -4,8 +4,11 @@ from .agent_base import AgentBase
 
 import pdb
 
+# TODO: check q_fun type is correct in all agents
+# TODO: check policy is E-Greedy, check if policy type is ok in all agents
 
-class AgentSARSA(AgentBase):
+
+class AgentQ(AgentBase):
     """Simple SARSA Agent
 
     See base class doc for how to use Agents in general.

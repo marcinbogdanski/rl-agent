@@ -1,6 +1,6 @@
 from .agents.runner import train_agent  # function
-from .agents.agent_offline import AgentOffline
-from .agents.agent_sarsa import AgentSARSA
+from .agents.agent_q import AgentQ
+from .agents.agent_actor_critic import AgentActorCritic
 from .agents.agent_dqn import AgentDQN
 from .agents.memory import Memory
 from .agents.approximators import QFunctTabular
