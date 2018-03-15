@@ -42,10 +42,11 @@ env = EnvTarget(target=50)
 
 # Under construction
 
-agent = rl.AgentOffline(
+agent = rl.AgentActorCritic(
     state_space=env.observation_space,
     action_space=env.action_space,
     discount=1.0,
+    v_fun_approx=None,
     q_fun_approx=None,
     policy=rl.PolicyTabularCont(
         learn_rate=0.001, std_dev=1)

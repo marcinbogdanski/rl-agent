@@ -14,10 +14,11 @@ def main(plot):
     # Sutton Barto example 13.1
     env = rl.envs.SwapActions()
 
-    agent = rl.AgentOffline(
+    agent = rl.AgentActorCritic(
         state_space=env.observation_space,
         action_space=env.action_space,
         discount=1.0,
+        v_fun_approx=None,
         q_fun_approx=None,
         policy=rl.PolicyTabularCat(
             learn_rate=0.00002)

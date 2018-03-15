@@ -52,6 +52,11 @@ class AgentDQN(AgentBase):
         self.policy.set_state_action_spaces(state_space, action_space)
         self.policy.link(self)
 
+    
+    @property
+    def start_learning_at(self):
+        return self._start_learning_at
+
 
     def reset(self):
         """Reset after episode completed. Can be called manually if required"""

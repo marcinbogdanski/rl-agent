@@ -92,7 +92,7 @@ class Program():
         #
         #   Agent
         #
-        agent = rl.AgentSARSA(
+        agent = rl.AgentQ(
             state_space=self.env.observation_space,
             action_space=self.env.action_space,
             discount=0.99,

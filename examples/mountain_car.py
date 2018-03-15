@@ -38,9 +38,8 @@ class Program():
 
         # Plot stuff
         if self.plotter is not None:
-            if agent.total_step >= agent.start_learning_at:
-                res = self.plotter.conditional_plot(
-                    self.logger, agent.total_step)
+            res = self.plotter.conditional_plot(
+                self.logger, agent.total_step)
 
 
 
@@ -102,7 +101,7 @@ class Program():
             #
             #   Agent - tiles or aggregate
             #
-            agent = rl.AgentSARSA(
+            agent = rl.AgentQ(
                 state_space=self.env.observation_space,
                 action_space=self.env.action_space,
                 discount=0.99,

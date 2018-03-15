@@ -10,7 +10,7 @@ def main():
     env.set_state(0, 3, 'terminal')
     env.set_state(3, 0, 'terminal')
 
-    agent = rl.AgentSARSA(
+    agent = rl.AgentQ(
         state_space=env.observation_space,
         action_space=env.action_space,
         discount=1.0,

@@ -122,10 +122,6 @@ class AgentBase:
 
 
     @property
-    def start_learning_at(self):
-        return self._start_learning_at
-
-    @property
     def step(self):
         return self._curr_step
 
