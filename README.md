@@ -8,9 +8,11 @@ This is a mini reinforcement learning repo implementing simple agent for OpenAI 
 
 This is work in progress.
 
-Currently includes:
- * very simple DQN implementation
- * linear function approximation with tiling features
+Currently available agents:
+*AgentQ* - e-greedy agent with q-function approximation
+ * Algorithm - currenty *SARSA*, other to be added later (e.g. Monte-Carlo, Eligibility Traces, Q-Learning)
+ * QFunction - pick from: *QFunctTabular*, *QFunctAggregate*, *QFunctTiles*
+ * Policy - must be *PolicyEpsGreedy*
 
 ## Alternatives
 
