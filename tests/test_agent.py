@@ -69,7 +69,7 @@ class TestAgent(unittest.TestCase):
             action_space=env.action_space,
             discount=0.99,
             start_learning_at=22000,
-            memory=rl.Memory(
+            memory=rl.MemoryDQN(
                 max_len=10000,
                 batch_size=64,
                 enable_pmr=False,

@@ -82,7 +82,7 @@ class Program():
                 action_space=self.env.action_space,
                 discount=0.99,
                 start_learning_at=100000,
-                memory=rl.Memory(
+                memory=rl.MemoryDQN(
                     max_len=100000,
                     batch_size=1024,
                     enable_pmr=False,

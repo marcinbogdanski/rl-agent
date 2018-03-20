@@ -46,10 +46,13 @@ agent = rl.AgentActorCritic(
     state_space=env.observation_space,
     action_space=env.action_space,
     discount=1.0,
+    algorithm='mc_return',
+    nb_episodes_in_batch=1,
+    memory=rl.MemoryBasic(10000),
     v_fun_approx=None,
     q_fun_approx=None,
     policy=rl.PolicyTabularCont(
-        learn_rate=0.001, std_dev=1)
+        learn_rate=0.01, std_dev=1)
     )
 
 

@@ -2,6 +2,7 @@ import numpy as np
 
 from .agent_base import AgentBase
 from .policies import PolicyEpsGreedy
+from .memory_dqn import MemoryDQN
 
 class AgentDQN(AgentBase):
     """DQN Agent with replay memory.
@@ -34,6 +35,8 @@ class AgentDQN(AgentBase):
         #
         #   Initialise Memory Module
         #
+        if not isinstance(memory, MemoryDQN):
+            raise ValueError('Memroy must be of type rl.MemoryDQN')
         self.memory = memory
         self.memory.set_state_action_spaces(state_space, action_space)
 

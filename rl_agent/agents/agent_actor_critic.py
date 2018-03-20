@@ -1,6 +1,7 @@
 import numpy as np
 
 from .agent_base import AgentBase
+from .memory_basic import MemoryBasic
 
 import pdb
 
@@ -18,6 +19,10 @@ class AgentActorCritic(AgentBase):
         action_space,
         discount,
 
+        algorithm,
+        nb_episodes_in_batch,
+
+        memory,
         v_fun_approx,
         q_fun_approx,
         policy):
@@ -28,6 +33,22 @@ class AgentActorCritic(AgentBase):
             discount: per-step reward discount, usually gamma in literature
         """
         super().__init__(state_space, action_space, discount)
+
+        assert algorithm in ['raw', 'mc_return']
+        assert isinstance(nb_episodes_in_batch, int)
+        assert nb_episodes_in_batch >= 1
+        
+
+        self._algorithm = algorithm
+        self._nb_episodes_in_batch = nb_episodes_in_batch
+
+        #
+        #   Initialize Memory Module
+        #
+        if not isinstance(memory, MemoryBasic):
+            raise ValueError('Memory must be of type MemoryBasic')
+        self.memory = memory
+        self.memory.set_state_action_spaces(state_space, action_space)
 
         #
         #   Initialize Q-function approximator
@@ -68,17 +89,46 @@ class AgentActorCritic(AgentBase):
             self.Q.perform_logging(episode, step, total_step)
 
 
+    def observe(self, observation, reward, done):
+        super().observe(observation, reward, done)
+
+        if len(self._trajectory) >= 2:
+            t = len(self._trajectory)-2               # next to last step
+            St = self._trajectory[t].observation
+            At = self._trajectory[t].action
+            St_1 = self._trajectory[t+1].observation  # next state
+            Rt_1 = self._trajectory[t+1].reward       # next step reward
+            done = self._trajectory[t+1].done         # next step done flag
+            self.memory.append(St, At, Rt_1, St_1, done)
+
+
     def learn(self):
         """Perform MC update on completed episodes"""
 
-        # Do MC update only if episode terminated
-        if self._trajectory[-1].done:
+        if self._algorithm == 'mc_return':
+            self._learn_mc_return()
+
+
+    def _learn_mc_return(self):
+
+        if self.memory.nb_episodes == self._nb_episodes_in_batch:
+
+            assert self._trajectory[-1].done
 
             # Iterate all states in trajectory, apart from terminal state
             for t in range(0, len(self._trajectory)-1):
                 # Update state-value at time t
                 self._eval_mc_t(t)
 
+            self.memory.clear()
+
+        # # Do MC update only if episode terminated
+        # if self._trajectory[-1].done:
+
+        #     # Iterate all states in trajectory, apart from terminal state
+        #     for t in range(0, len(self._trajectory)-1):
+        #         # Update state-value at time t
+        #         self._eval_mc_t(t)
 
     def _eval_mc_t(self, t):
         """MC update for state-values for single state in trajectory

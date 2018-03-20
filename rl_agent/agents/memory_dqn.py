@@ -4,7 +4,7 @@ import pdb
 
 # TODO: Add proper unittest
 
-class Memory:
+class MemoryDQN:
     """Circular buffer for DQN memory reply."""
 
     def __init__(self,
@@ -47,7 +47,7 @@ class Memory:
         assert state_space.shape is not None
         assert state_space.dtype is not None
         assert action_space.shape is not None
-        assert action_space.shape is not None
+        assert action_space.dtype is not None
 
         self._state_space = state_space
         self._action_space = action_space
@@ -107,26 +107,15 @@ class Memory:
         if self._curr_insert_ptr >= self._max_len:
             self._curr_insert_ptr = 0
 
-    def _print_all(self):
-        print()
-        print('_hist_St')
-        print(self._hist_St)
-
-        print()
-        print('_hist_At')
-        print(self._hist_At)
-
-        print()
-        print('_hist_Rt_1')
-        print(self._hist_Rt_1)
-
-        print()
-        print('_hist_St_1')
-        print(self._hist_St_1)
-
-        print()
-        print('_hist_done')
-        print(self._hist_done)
+    def clear(self):
+        self._curr_len = 0
+        self._curr_insert_ptr = 0
+        self._hist_St.clear()
+        self._hist_At.clear()
+        self._hist_Rt_1.clear()
+        self._hist_St_1.clear()
+        self._hist_done.clear()
+        self._hist_error.clear()
 
     def length(self):
         """Number of samples in memory, 0 <= length <= max_len"""
@@ -229,7 +218,26 @@ class Memory:
                 hist_done=np.concatenate((self._hist_done[ptr:], self._hist_done[0:ptr])),
                 hist_error=np.concatenate((self._hist_error[ptr:], self._hist_error[0:ptr])) )
         
+    def _print_all(self):
+        print()
+        print('_hist_St')
+        print(self._hist_St)
 
+        print()
+        print('_hist_At')
+        print(self._hist_At)
+
+        print()
+        print('_hist_Rt_1')
+        print(self._hist_Rt_1)
+
+        print()
+        print('_hist_St_1')
+        print(self._hist_St_1)
+
+        print()
+        print('_hist_done')
+        print(self._hist_done)
 
 if __name__ == '__main__':
     # this is old test-method

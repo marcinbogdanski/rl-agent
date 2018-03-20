@@ -2,7 +2,8 @@ from .agents.runner import train_agent  # function
 from .agents.agent_q import AgentQ
 from .agents.agent_actor_critic import AgentActorCritic
 from .agents.agent_dqn import AgentDQN
-from .agents.memory import Memory
+from .agents.memory_basic import MemoryBasic
+from .agents.memory_dqn import MemoryDQN
 from .agents.approximators import QFunctTabular
 from .agents.approximators import QFunctAggregate
 from .agents.approximators import QFunctTiles
