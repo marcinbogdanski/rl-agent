@@ -76,11 +76,44 @@ class PolicyTabularCat:
 
         self._weights += self._learn_rate * target * log_grad_st
 
-        pass
-        #raise NotImplementedError
 
     def train_batch(self, states, actions, targets):
-        raise NotImplementedError
+        assert self._state_space is not None
+        assert self._action_space is not None
+
+        assert isinstance(states, np.ndarray)
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
+
+        assert isinstance(actions, np.ndarray)
+        assert actions.shape[1:] == self._action_space.shape
+        # assert all(map(self._action_space.contains, actions))
+
+        assert isinstance(targets, np.ndarray)
+        assert targets.ndim == 1
+
+        assert len(states) == len(actions) == len(targets)
+
+        gradient = np.zeros([self._state_space.n, self._action_space.n])
+
+        for i in range(len(states)):
+            state = states[i]
+            action = actions[i]
+            target = targets[i]
+
+            features = np.zeros([self._state_space.n, self._action_space.n])
+            features[state, action] = 1
+
+            pref_all_act = self._weights[state]
+            prob_all_act = _softmax(pref_all_act)
+
+            # Sutton & Barto eq 13.7
+            log_grad_st = np.copy(features)
+            log_grad_st[state] -= prob_all_act
+
+            gradient += self._learn_rate * target * log_grad_st
+
+        self._weights += gradient
 
     
 
@@ -90,4 +123,4 @@ class PolicyTabularCat:
         pref_all_act = self._weights[state]
         prob_all_act = _softmax(pref_all_act)
 
-        return prob_all_act
+        return prob_all_act, self._weights[state]

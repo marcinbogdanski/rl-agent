@@ -69,9 +69,41 @@ class PolicyTabularCont:
         self._weights += delta_weights
 
     def train_batch(self, states, actions, targets):
-        raise NotImplementedError
+        assert self._state_space is not None
+        assert self._action_space is not None
 
-    
+        assert isinstance(states, np.ndarray)
+        assert states.shape[1:] == self._state_space.shape
+        # assert all(map(self._state_space.contains, states))
+
+        assert isinstance(actions, np.ndarray)
+        assert actions.shape[1:] == self._action_space.shape
+        # assert all(map(self._action_space.contains, actions))
+
+        assert isinstance(targets, np.ndarray)
+        assert targets.ndim == 1
+
+        assert len(states) == len(actions) == len(targets)
+
+        gradient = np.zeros([self._state_space.n])
+
+        for i in range(len(states)):
+            state = states[i]
+            action = actions[i]
+            target = targets[i]
+
+            features = np.zeros([self._state_space.n])
+            features[state] = 1
+
+            mean = self._weights[state]
+            log_grad_st = (action - mean) * features
+            log_grad_st /= self._variance**2
+
+            delta_weights = self._learn_rate * target * log_grad_st
+            gradient += delta_weights
+
+        self._weights += gradient
+
 
     def get_raw(self, state):
         """Regurns mean action for state"""

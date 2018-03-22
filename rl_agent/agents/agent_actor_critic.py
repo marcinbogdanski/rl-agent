@@ -19,8 +19,9 @@ class AgentActorCritic(AgentBase):
         action_space,
         discount,
 
-        algorithm,
-        nb_episodes_in_batch,
+        algorithm_type,
+        algorithm_mode,
+        algorithm_ep_in_batch,
 
         memory,
         v_fun_approx,
@@ -34,13 +35,28 @@ class AgentActorCritic(AgentBase):
         """
         super().__init__(state_space, action_space, discount)
 
-        assert algorithm in ['raw', 'mc_return']
-        assert isinstance(nb_episodes_in_batch, int)
-        assert nb_episodes_in_batch >= 1
+        assert algorithm_type in ['raw', 'raw_norm', 'mc_return']
+        assert algorithm_mode in ['online', 'batch']
+        assert isinstance(algorithm_ep_in_batch, int)
+        assert algorithm_ep_in_batch >= 1
+
+
+
+        if algorithm_type == 'raw':
+            if algorithm_mode != 'batch':
+                raise ValueError('Alg. "raw" must be run in batch mode.')
+        if algorithm_type == 'raw_norm':
+            if algorithm_mode != 'batch':
+                raise ValueError('Alg. "raw_norm" must be run in batch mode.')
+        if algorithm_type == 'mc_return':
+            if algorithm_mode != 'batch':
+                raise ValueError('Alg. "mc_return" must be run in batch mode.')
+
         
 
-        self._algorithm = algorithm
-        self._nb_episodes_in_batch = nb_episodes_in_batch
+        self._algorithm_type = algorithm_type
+        self._algorithm_mode = algorithm_mode
+        self._algorithm_ep_in_batch = algorithm_ep_in_batch
 
         #
         #   Initialize Memory Module
@@ -105,22 +121,76 @@ class AgentActorCritic(AgentBase):
     def learn(self):
         """Perform MC update on completed episodes"""
 
-        if self._algorithm == 'mc_return':
-            self._learn_mc_return()
+        if self._algorithm_mode == 'online':
+            self._learn_online()
 
 
-    def _learn_mc_return(self):
+        elif self._algorithm_mode == 'batch':
+            if self.memory.nb_episodes == self._algorithm_ep_in_batch:
+                self._learn_batch()
 
-        if self.memory.nb_episodes == self._nb_episodes_in_batch:
+        else:
+            raise ValueError('Uknown mode: ' + self._algorithm_mode)
 
-            assert self._trajectory[-1].done
+    def _learn_online(self):
+        raise NotImplementedError()
 
-            # Iterate all states in trajectory, apart from terminal state
-            for t in range(0, len(self._trajectory)-1):
-                # Update state-value at time t
-                self._eval_mc_t(t)
+    def _learn_batch(self):
+        states, actions, rewards_1, states_1, dones_1 = \
+            self.memory.get_all()
+        targets = np.zeros([len(states)])
 
-            self.memory.clear()
+        #
+        #   RAW
+        #
+        if self._algorithm_type == 'raw':
+            for i in range(len(states)):
+                targets[i] = self._calc_Gt_new(i, rewards_1, dones_1)
+
+        #
+        #   RAW NORM
+        #
+        elif self._algorithm_type == 'raw_norm':
+            for i in range(len(states)):
+                targets[i] = self._calc_Gt_new(i, rewards_1, dones_1)
+            mean = np.mean(targets)
+            stddev = np.std(targets)
+            targets -= mean
+            targets /= stddev + 1e-6  # don't divide by zero
+
+        #
+        #   MC RETURN
+        #
+        elif self._algorithm_type == 'mc_return':
+            for i in range(len(states)):
+                targets[i] = self._calc_Gt_new(i, rewards_1, dones_1)
+
+        else:
+            raise ValueError('Uknown alg. type: '+self._algorithm_type)
+
+
+        self.policy.train_batch(states, actions, targets)
+
+        self.memory.clear()
+
+
+    
+
+
+        # if self.memory.nb_episodes == self._algorithm_ep_in_batch:
+
+        #     print('   ---   old way   ---   ')
+
+        #     assert self._trajectory[-1].done
+
+        #     # Iterate all states in trajectory, apart from terminal state
+        #     for t in range(0, len(self._trajectory)-1):
+        #         # Update state-value at time t
+        #         self._eval_mc_t(t)
+
+        #     self.memory.clear()
+
+
 
         # # Do MC update only if episode terminated
         # if self._trajectory[-1].done:
@@ -129,6 +199,23 @@ class AgentActorCritic(AgentBase):
         #     for t in range(0, len(self._trajectory)-1):
         #         # Update state-value at time t
         #         self._eval_mc_t(t)
+
+
+    def _calc_Gt_new(self, t, rewards_1, dones_1):
+        discount = 1.0
+
+        Gt = 0  # return
+
+        while True:
+            Gt += discount * rewards_1[t]
+            discount *= self._discount
+            if dones_1[t]:
+                break
+            else:
+                t += 1
+
+        return Gt
+
 
     def _eval_mc_t(self, t):
         """MC update for state-values for single state in trajectory
@@ -148,23 +235,20 @@ class AgentActorCritic(AgentBase):
         At = self._trajectory[t].action
         Gt = self._calc_Gt(t)                  # return for current state
 
+        print('Gt_old', Gt)
+
         if self.Q is not None:
             self.Q.train(St, At, Gt)
 
         self.policy.train_single(St, At, Gt)
 
 
-    def _calc_Gt(self, t, n=float('inf')):
+    def _calc_Gt(self, t):
         """Calculates return for state t, using n future steps.
 
         Params:
             t (int [t, T-1]) - time step in trajectory,
                     0 is initial state; T-1 is last non-terminal state
-
-            n (int or +inf, [0, +inf]) - n-steps of reward to accumulate
-                    If n >= T then calculate full return for state t
-                    For n == 1 this equals to TD return
-                    For n == +inf this equals to MC return
         """
 
         

@@ -101,7 +101,16 @@ class MemoryBasic:
     def length(self):
         return self._curr_insert_ptr
 
-    def get_data(self):
+    def get_last(self):
+        return \
+            self._hist_St[self._curr_insert_ptr-1:self._curr_insert_ptr], \
+            self._hist_At[self._curr_insert_ptr-1:self._curr_insert_ptr], \
+            self._hist_Rt_1[self._curr_insert_ptr-1:self._curr_insert_ptr], \
+            self._hist_St_1[self._curr_insert_ptr-1:self._curr_insert_ptr], \
+            self._hist_done[self._curr_insert_ptr-1:self._curr_insert_ptr]
+
+
+    def get_all(self):
         return \
             self._hist_St[0:self._curr_insert_ptr], \
             self._hist_At[0:self._curr_insert_ptr], \

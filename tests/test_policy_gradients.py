@@ -17,8 +17,9 @@ class TestPolicyGradient(unittest.TestCase):
             state_space=env.observation_space,
             action_space=env.action_space,
             discount=1.0,
-            algorithm='mc_return',
-            nb_episodes_in_batch=1,
+            algorithm_type='mc_return',
+            algorithm_mode='batch',
+            algorithm_ep_in_batch=1,
             memory=rl.MemoryBasic(10000),
             v_fun_approx=None,
             q_fun_approx=None,
@@ -39,5 +40,5 @@ class TestPolicyGradient(unittest.TestCase):
 
         print('{0[0]} {0[1]}'.format(agent.policy._weights[0]))
 
-        self.assertTrue(agent.policy._weights[0,0] == -0.02437330910810401)
-        self.assertTrue(agent.policy._weights[0,1] == 0.02437330910810403)
+        self.assertTrue(agent.policy._weights[0,0] == -0.024334308254129137)
+        self.assertTrue(agent.policy._weights[0,1] == 0.024334308254129144)
