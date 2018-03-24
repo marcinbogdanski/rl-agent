@@ -4,7 +4,7 @@ import subprocess
 import socket
 import datetime
 
-class Log():
+class Log_old():
     """Log containing header and multiple user-defined series of data
 
     One log should be used for each module. E.g. one or more for agent, one for 
@@ -144,7 +144,7 @@ class Log():
         total_step = self.total_steps[-1]
         return item, episode, step, total_step
 
-class Logger():
+class Logger_old():
     def __init__(self):
         """Wrapper around multiple Log objects
 
@@ -161,6 +161,36 @@ class Logger():
               'Hostname:' + self.hostname + '\n' + \
               'GIT Hash:' + self.git_hash
         return res
+
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump( self.__dict__, f )
+
+    def load(self, filename):
+        with open(filename, 'rb') as f:
+            tmp_dict = pickle.load(f)
+            self.__dict__.clear()
+            self.__dict__.update(tmp_dict)
+
+
+
+
+class Log():
+    def __init__(self, shape, extent=None):
+        self._shape = shape
+        self._extent = extent
+
+    def add(self, value):
+        if value.shape != self._shape:
+            raise ValueError('Shape missmatch')
+
+class Logger():
+    def __init__(self):
+        self._dict = {}
+
+    def new(self, name, log):
+        self._dict[name] = log
+
 
     def save(self, filename):
         with open(filename, 'wb') as f:

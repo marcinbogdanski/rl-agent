@@ -13,6 +13,7 @@ class Program():
     def __init__(self):
         self.env = None
         self.logger = None
+        self.logger_old = None
         self.plotter = None
 
     def on_step_end(self, agent, reward, observation, done, action):
@@ -39,7 +40,7 @@ class Program():
         # Plot stuff
         if self.plotter is not None:
             res = self.plotter.conditional_plot(
-                self.logger, agent.total_step)
+                self.logger_old, agent.total_step)
 
 
 
@@ -151,22 +152,24 @@ class Program():
         #   Logging
         #
         if args.logfile is not None or args.plot:
-            self.logger = rl.util.Logger()
+            self.logger_old = rl.util.Logger_old()
 
-            self.logger.agent = rl.util.Log('Agent')
-            self.logger.q_val = rl.util.Log('Q_Val')
-            self.logger.env = rl.util.Log('Environment')
-            self.logger.hist = rl.util.Log('History', 'All sates visited')
-            self.logger.memory = rl.util.Log('Memory', 'Full memory dump')
-            self.logger.approx = rl.util.Log('Approx', 'Approximator')
-            self.logger.epsumm = rl.util.Log('Episodes')
+            self.logger_old.agent = rl.util.Log_old('Agent')
+            self.logger_old.q_val = rl.util.Log_old('Q_Val')
+            self.logger_old.env = rl.util.Log_old('Environment')
+            self.logger_old.hist = rl.util.Log_old('History', 'All sates visited')
+            self.logger_old.memory = rl.util.Log_old('Memory', 'Full memory dump')
+            self.logger_old.approx = rl.util.Log_old('Approx', 'Approximator')
+            self.logger_old.epsumm = rl.util.Log_old('Episodes')
 
-            agent.log_episodes = self.logger.epsumm
-            agent.log_hist = self.logger.hist
+            agent.log_episodes = self.logger_old.epsumm
+            agent.log_hist = self.logger_old.hist
             if isinstance(agent, rl.AgentDQN):
-                agent.memory.install_logger(self.logger.memory, log_every=1000)
+                agent.memory.install_logger(self.logger_old.memory, log_every=1000)
             agent.Q.install_logger(
-                self.logger.q_val, log_every=1000, samples=(64, 64))
+                self.logger_old.q_val, log_every=1000, samples=(64, 64))
+
+            self.logger = rl.util.Logger()
 
             agent.register_callback('on_step_end', self.on_step_end)
 
@@ -182,7 +185,7 @@ class Program():
                 target_avg_reward=-200)
         finally:
             if args.logfile is not None:
-                logger.save(args.logfile)
+                logger_old.save(args.logfile)
                 print('Log saved')
         
         if self.plotter is not None:
