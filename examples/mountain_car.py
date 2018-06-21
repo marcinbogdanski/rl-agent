@@ -5,8 +5,11 @@ from mpl_toolkits.mplot3d import axes3d
 import gym
 
 import rl_agent as rl
+import rl_agent.util.plotter as plotter
 
 import tensorflow as tf
+
+import pdb
 
 
 class Program():
@@ -15,6 +18,8 @@ class Program():
         self.logger = None
         self.logger_old = None
         self.plotter = None
+        self.figures = []
+        self.axes = {}
 
     def on_step_end(self, agent, reward, observation, done, action):
         """This is callback executed at step end.action
@@ -27,7 +32,7 @@ class Program():
             # time step t ends
         """
 
-        self.env.render()
+        # self.env.render()
 
         # Print to console
         if agent.total_step % 1000 == 0:
@@ -39,8 +44,32 @@ class Program():
 
         # Plot stuff
         if self.plotter is not None:
+            
+            
             res = self.plotter.conditional_plot(
                 self.logger_old, agent.total_step)
+
+            if res:
+
+            
+                ax_q = self.axes['Q']
+                ax_q.clear()
+
+
+                log_q = self.logger['Q']
+                
+                extent = log_q.get_extent_2d()
+                q_dom = log_q.get_domain_2d_as_vector()
+                q_val = agent.Q.estimate_all(q_dom)
+                q_val = q_val.reshape( (*log_q.samples, -1) )
+
+                q_max = np.max(q_val, axis=2)
+                plotter.plot_q_val_wireframe(
+                    ax_q, q_max, extent, ('pos', 'vel', 'q_max'), color='gray', alpha=1.0)
+
+                for fig in self.figures:
+                    fig.canvas.draw()
+                plt.pause(0.001)
 
 
 
@@ -129,7 +158,8 @@ class Program():
         # Need to re-think how plotting works
         if args.plot:
             fig1 = plt.figure()
-            #fig2 = plt.figure()
+            fig2 = plt.figure()
+            self.figures = [fig1, fig2]
             self.plotter = rl.util.Plotter(
                 realtime_plotting=True, plot_every=1000, disp_len=1000,
                 nb_actions=self.env.action_space.n,
@@ -147,6 +177,8 @@ class Program():
                 self.env.observation_space.low, 
                 self.env.observation_space.high, 
                 h_line=0.0, v_line=-0.5)
+
+            self.axes['Q'] = fig2.add_subplot(2, 4, 1, projection='3d')
 
         #
         #   Logging
@@ -170,6 +202,11 @@ class Program():
                 self.logger_old.q_val, log_every=1000, samples=(64, 64))
 
             self.logger = rl.util.Logger()
+            self.logger.new(rl.util.Log(
+                name='Q',
+                low=self.env.observation_space.low,
+                high=self.env.observation_space.high,
+                samples=np.array([64, 64])))
 
             agent.register_callback('on_step_end', self.on_step_end)
 

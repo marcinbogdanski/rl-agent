@@ -1,8 +1,11 @@
+import numpy as np
 import pickle
 
 import subprocess
 import socket
 import datetime
+
+import pdb
 
 class Log_old():
     """Log containing header and multiple user-defined series of data
@@ -176,20 +179,53 @@ class Logger_old():
 
 
 class Log():
-    def __init__(self, shape, extent=None):
-        self._shape = shape
-        self._extent = extent
+    def __init__(self, name, low, high, samples):
+        if low.shape != high.shape or low.shape != samples.shape:
+            raise ValueError('Param shape missmatch')
+        self.name = name
+        self.low = low
+        self.high = high
+        self.samples = samples
 
     def add(self, value):
-        if value.shape != self._shape:
-            raise ValueError('Shape missmatch')
+        if value.shape != self._samples.shape:
+            raise ValueError('Value wrong shape')
+
+    def get_extent_2d(self):
+        if self.low.shape != (2,):
+            raise ValueError('Shape must be (2,)')
+        return (self.low[0], self.high[0], self.low[1], self.high[1])
+
+    def get_domain_2d_as_vector(self):
+        if self.low.shape != (2,):
+            raise ValueError('Shape must be (2,)')
+        
+        linspace_dim_1 = np.linspace(
+            self.low[0], self.high[0], self.samples[0])
+        linspace_dim_2 = np.linspace(
+            self.low[1], self.high[1], self.samples[1])
+
+        num_tests = len(linspace_dim_1) * len(linspace_dim_2)
+        d_1_skip = len(linspace_dim_2)
+        domain = np.zeros([num_tests, 2])
+        for d_1 in range(len(linspace_dim_1)):
+            for d_2 in range(len(linspace_dim_2)):
+                domain[d_1*d_1_skip + d_2, 0] = linspace_dim_1[d_1]
+                domain[d_1*d_1_skip + d_2, 1] = linspace_dim_2[d_2]
+
+        return domain
 
 class Logger():
     def __init__(self):
         self._dict = {}
 
-    def new(self, name, log):
-        self._dict[name] = log
+    def __getitem__(self, indices):
+        return self._dict[indices]
+
+    def new(self, log):
+        if log.name in self._dict:
+            raise ValueError('Log ' + log.name + ' already exists')
+        self._dict[log.name] = log
 
 
     def save(self, filename):

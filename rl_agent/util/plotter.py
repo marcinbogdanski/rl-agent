@@ -182,9 +182,7 @@ class Plotter():
                 ep_ends, ep_avg_rew, color='gray',
                 marker='o', markerfacecolor='None')
 
-        for fig in self.figures:
-            fig.canvas.draw()
-        plt.pause(0.001)
+        
 
 def plot_q_val_wireframe(ax, q_val, extent, labels, color, alpha):
     """Plot 2d q_val array on 3d wireframe plot.
